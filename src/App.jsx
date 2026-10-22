@@ -199,7 +199,7 @@ export default function App() {
       if (phase === 'SETUP') {
         audioRef.current.volume = 1.0;
       } else {
-        audioRef.current.volume = 0.7;
+        audioRef.current.volume = 0.4;
       }
     }
   }, [bgmPlaying, phase]);
@@ -284,7 +284,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
+    <div className="min-h-screen bg-black text-[#F5F5F5] font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
       
       <style>{`
         @keyframes subtlePulse {
