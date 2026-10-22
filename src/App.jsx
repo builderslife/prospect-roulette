@@ -71,21 +71,26 @@ export default function App() {
 
   const [spinState, setSpinState] = useState([true, true, true, true]);
   const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
+  const [copiedText, setCopiedText] = useState(false);
 
+  // Revisi Sound: Mechanical Click / Thud
   const playClickSound = () => {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
+      
       oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.05);
+      
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
       oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.1);
+      oscillator.stop(audioCtx.currentTime + 0.05);
     } catch (e) {
       console.log("Audio not supported");
     }
@@ -95,7 +100,10 @@ export default function App() {
     setMode(selectedMode);
     setPhase('SPINNING');
     setSpinState([true, true, true, true]);
-    setAnswers({ product: '', approach: '', transition: '', handling: '' });
+    // Reset answers only if starting completely fresh from SETUP
+    if (phase === 'SETUP') {
+      setAnswers({ product: '', approach: '', transition: '', handling: '' });
+    }
 
     const data = SLOT_DATA[selectedMode];
     const final1 = data.demografi[Math.floor(Math.random() * data.demografi.length)];
@@ -126,15 +134,32 @@ export default function App() {
   };
 
   const generateObjection = () => {
-    const randomObj = OBJECTIONS[Math.floor(Math.random() * OBJECTIONS.length)];
-    setObjection(randomObj);
+    if (!objection) {
+      const randomObj = OBJECTIONS[Math.floor(Math.random() * OBJECTIONS.length)];
+      setObjection(randomObj);
+    }
     setPhase('OBJECTION');
   };
 
+  const getFormatText = () => {
+    return `📋 *STUDY CASE DRILLING*\n\n👤 *Mode:* ${mode.toUpperCase()}\n\n🎰 *PROFIL NASABAH*\n• Demografi: ${result.slot1}\n• Kapasitas: ${result.slot2}\n• Tanggungan: ${result.slot3}\n• Kondisi: ${result.slot4}\n\n💡 *STRATEGY*\n• *Product & Why:* ${answers.product}\n• *Networking:* ${answers.approach}\n• *Transition:* ${answers.transition}\n\n🎯 *OBJECTION*\nNasabah: "${objection}"\n• *Handling:* ${answers.handling}`;
+  };
+
+  const copyOnlyText = () => {
+    navigator.clipboard.writeText(getFormatText()).then(() => {
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+    });
+  };
+
   const copyToWhatsApp = () => {
-    const text = `📋 *STUDY CASE DRILLING*\n\n👤 *Mode:* ${mode.toUpperCase()}\n\n🎰 *PROFIL NASABAH*\n• Demografi: ${result.slot1}\n• Kapasitas: ${result.slot2}\n• Tanggungan: ${result.slot3}\n• Kondisi: ${result.slot4}\n\n💡 *STRATEGY*\n• *Product & Why:* ${answers.product}\n• *Networking:* ${answers.approach}\n• *Transition:* ${answers.transition}\n\n🎯 *OBJECTION*\nNasabah: "${objection}"\n• *Handling:* ${answers.handling}`;
-    navigator.clipboard.writeText(text).catch(err => console.log('Gagal copy', err));
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    navigator.clipboard.writeText(getFormatText()).catch(() => {});
+    window.open(`https://wa.me/?text=${encodeURIComponent(getFormatText())}`, '_blank');
+  };
+
+  const handleReset = () => {
+    setObjection('');
+    setPhase('SETUP');
   };
 
   return (
@@ -180,14 +205,22 @@ export default function App() {
           </div>
 
           {!spinState[3] && (
-            <button onClick={() => setPhase('STRATEGY')} className="mt-12 bg-white text-black px-12 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-pulse">
-              Lanjutkan
-            </button>
+            <div className="mt-12 flex flex-col md:flex-row w-full max-w-3xl gap-4">
+              <button onClick={() => setPhase('SETUP')} className="flex-1 bg-transparent border border-[#3A3A3A] text-gray-400 px-4 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
+                Kembali
+              </button>
+              <button onClick={() => startSpin(mode)} className="flex-1 bg-transparent border border-white text-white px-4 py-4 font-bold tracking-widest text-sm hover:bg-white hover:text-black transition uppercase">
+                Spin Ulang
+              </button>
+              <button onClick={() => setPhase('STRATEGY')} className="flex-[2] bg-white text-black px-4 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-pulse">
+                Lanjutkan
+              </button>
+            </div>
           )}
         </div>
       )}
 
-      {/* PHASE 3: STRATEGY (SPLIT SCREEN) */}
+      {/* PHASE 3: STRATEGY */}
       {phase === 'STRATEGY' && (
         <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
           <div className="w-full md:w-1/3 bg-[#121212] p-8 md:p-16 border-b md:border-b-0 md:border-r border-[#2A2A2A] z-10 sticky top-0 md:static">
@@ -206,19 +239,22 @@ export default function App() {
             <div className="space-y-12">
               <div className="flex flex-col">
                 <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">1. Product & Why</label>
-                <textarea className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Solusi produk yang ditawarkan..." onChange={(e) => setAnswers({...answers, product: e.target.value})}></textarea>
+                <textarea value={answers.product} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Solusi produk yang ditawarkan..." onChange={(e) => setAnswers({...answers, product: e.target.value})}></textarea>
               </div>
               <div className="flex flex-col">
                 <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">2. Networking Approach</label>
-                <textarea className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Cara membuka obrolan..." onChange={(e) => setAnswers({...answers, approach: e.target.value})}></textarea>
+                <textarea value={answers.approach} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Cara membuka obrolan..." onChange={(e) => setAnswers({...answers, approach: e.target.value})}></textarea>
               </div>
               <div className="flex flex-col">
                 <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">3. Transition</label>
-                <textarea className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Kalimat jembatan ke asuransi..." onChange={(e) => setAnswers({...answers, transition: e.target.value})}></textarea>
+                <textarea value={answers.transition} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Kalimat jembatan ke asuransi..." onChange={(e) => setAnswers({...answers, transition: e.target.value})}></textarea>
               </div>
             </div>
 
-            <div className="mt-16 flex justify-end pb-12 md:pb-0">
+            <div className="mt-16 flex justify-end gap-4 pb-12 md:pb-0">
+              <button onClick={() => setPhase('SPINNING')} className="bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
+                Kembali
+              </button>
               <button onClick={generateObjection} className="bg-white text-black px-10 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase">
                 Submit Strategy
               </button>
@@ -227,7 +263,7 @@ export default function App() {
         </div>
       )}
 
-      {/* PHASE 4: OBJECTION (SPLIT SCREEN) */}
+      {/* PHASE 4: OBJECTION */}
       {phase === 'OBJECTION' && (
         <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
           <div className="hidden md:block w-1/3 bg-[#121212] p-16 border-r border-[#2A2A2A]">
@@ -254,10 +290,13 @@ export default function App() {
 
             <div className="flex flex-col">
               <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">Your Handling Response</label>
-              <textarea className="w-full bg-transparent border-b-2 border-red-500 focus:border-white outline-none transition py-3 resize-none text-base md:text-lg" rows="4" placeholder="Ketik respons Anda di sini..." onChange={(e) => setAnswers({...answers, handling: e.target.value})}></textarea>
+              <textarea value={answers.handling} className="w-full bg-transparent border-b-2 border-red-500 focus:border-white outline-none transition py-3 resize-none text-base md:text-lg" rows="4" placeholder="Ketik respons Anda di sini..." onChange={(e) => setAnswers({...answers, handling: e.target.value})}></textarea>
             </div>
 
-            <div className="mt-12 pb-12">
+            <div className="mt-12 flex gap-4 pb-12">
+              <button onClick={() => setPhase('STRATEGY')} className="w-full md:w-auto bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
+                Kembali
+              </button>
               <button onClick={() => setPhase('FINISHED')} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">
                 Finalize Case
               </button>
@@ -269,7 +308,7 @@ export default function App() {
       {/* PHASE 5: FINISHED */}
       {phase === 'FINISHED' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-          <div className="w-full max-w-2xl bg-[#121212] p-8 md:p-12 border border-[#2A2A2A] mb-8 rounded-sm">
+          <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-12 border border-[#2A2A2A] mb-8 rounded-sm">
             <h2 className="text-sm font-bold uppercase tracking-widest mb-8 text-center border-b border-[#2A2A2A] pb-6">Case Summary</h2>
             <div className="text-sm md:text-base space-y-6 text-gray-400 leading-relaxed">
               <p><strong className="text-gray-500 text-[10px] uppercase tracking-wider block mb-2">Profile:</strong> <span className="text-white">{result.slot1} | {result.slot2}</span></p>
@@ -279,11 +318,17 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row w-full max-w-2xl gap-4">
-            <button onClick={copyToWhatsApp} className="w-full md:w-2/3 bg-white text-black px-8 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase">
-              Send to WhatsApp
+          <div className="grid grid-cols-2 md:grid-cols-4 w-full max-w-3xl gap-4">
+            <button onClick={() => setPhase('OBJECTION')} className="bg-transparent border border-[#3A3A3A] text-gray-400 py-4 font-bold tracking-widest text-xs hover:text-white hover:border-white transition uppercase">
+              Kembali
             </button>
-            <button onClick={() => setPhase('SETUP')} className="w-full md:w-1/3 bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
+            <button onClick={copyOnlyText} className="bg-transparent border border-white text-white py-4 font-bold tracking-widest text-xs hover:bg-white hover:text-black transition uppercase relative">
+              {copiedText ? 'Copied!' : 'Copy Text'}
+            </button>
+            <button onClick={copyToWhatsApp} className="bg-[#25D366] text-black py-4 font-bold tracking-widest text-xs hover:bg-green-400 transition uppercase">
+              WhatsApp
+            </button>
+            <button onClick={handleReset} className="bg-white text-black py-4 font-bold tracking-widest text-xs hover:bg-gray-200 transition uppercase">
               New Drill
             </button>
           </div>
