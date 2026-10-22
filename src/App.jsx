@@ -389,7 +389,7 @@ export default function App() {
         </div>
       )}
 
-      {/* PHASE 3: STRATEGY (WITH CHEAT SHEET) */}
+      {/* PHASE 3: STRATEGY */}
       {phase === 'STRATEGY' && (
         <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden pt-16 md:pt-0">
           <div className="w-full md:w-1/3 bg-[#121212] p-8 md:p-16 border-b md:border-b-0 md:border-r border-[#2A2A2A] z-10 sticky top-0 md:static md:flex md:flex-col md:justify-center">
@@ -406,7 +406,6 @@ export default function App() {
             <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-12 uppercase mt-4 md:mt-0">Formulate Strategy</h1>
             
             <div className="space-y-12">
-              {/* Box 1 with Cheat Sheet */}
               <div className="flex flex-col">
                 <div className="mb-3">
                   <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">1. Product & Why</label>
@@ -414,8 +413,6 @@ export default function App() {
                 </div>
                 <textarea value={answers.product} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Solusi produk yang ditawarkan..." onChange={(e) => setAnswers({...answers, product: e.target.value})}></textarea>
               </div>
-              
-              {/* Box 2 with Cheat Sheet */}
               <div className="flex flex-col">
                 <div className="mb-3">
                   <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">2. Networking Approach</label>
@@ -423,8 +420,6 @@ export default function App() {
                 </div>
                 <textarea value={answers.approach} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Cara membuka obrolan..." onChange={(e) => setAnswers({...answers, approach: e.target.value})}></textarea>
               </div>
-
-              {/* Box 3 with Cheat Sheet */}
               <div className="flex flex-col">
                 <div className="mb-3">
                   <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">3. Transition</label>
@@ -454,6 +449,8 @@ export default function App() {
             <div className="space-y-6 opacity-75 text-sm">
               <p><strong className="block text-[10px] text-gray-500 uppercase tracking-wider mb-2">Demografi:</strong> {result.slot1}</p>
               <p><strong className="block text-[10px] text-gray-500 uppercase tracking-wider mb-2">Kapasitas:</strong> {result.slot2}</p>
+              <p><strong className="block text-[10px] text-gray-500 uppercase tracking-wider mb-2">Tanggungan:</strong> {result.slot3}</p>
+              <p><strong className="block text-[10px] text-gray-500 uppercase tracking-wider mb-2">Kondisi:</strong> <span className="text-red-400 font-bold">{result.slot4}</span></p>
             </div>
           </div>
           
