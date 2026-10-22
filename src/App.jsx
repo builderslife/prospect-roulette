@@ -73,22 +73,29 @@ export default function App() {
   const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
   const [copiedText, setCopiedText] = useState(false);
   
-  // Kontrol Audio
+  // Kontrol Audio BGM
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const audioRef = useRef(null);
-  const spinAudioRef = useRef(null); // Ref khusus untuk suara spin looping
+  const spinAudioRef = useRef(null);
 
+  // Logika BGM (Looping sepanjang sesi & Penyesuaian Volume)
   useEffect(() => {
     if (audioRef.current) {
-      if (bgmPlaying && phase === 'SETUP') {
+      if (bgmPlaying) {
         audioRef.current.play().catch(() => setBgmPlaying(false));
       } else {
         audioRef.current.pause();
       }
+
+      // Volume 100% di halaman depan, 70% di halaman selanjutnya
+      if (phase === 'SETUP') {
+        audioRef.current.volume = 1.0;
+      } else {
+        audioRef.current.volume = 0.7;
+      }
     }
   }, [bgmPlaying, phase]);
 
-  // Fungsi Panggilan Audio Eksternal (Success & Clap)
   const playSuccessSound = () => new Audio('/success.mp3').play().catch(() => {});
   const playClapSound = () => new Audio('/clap.mp3').play().catch(() => {});
 
@@ -101,7 +108,6 @@ export default function App() {
       setAnswers({ product: '', approach: '', transition: '', handling: '' });
     }
 
-    // Mainkan suara putaran (looping) dari awal
     if (spinAudioRef.current) {
       spinAudioRef.current.currentTime = 0;
       spinAudioRef.current.play().catch(() => {});
@@ -124,12 +130,10 @@ export default function App() {
       });
     }, 100);
 
-    // Hentikan blur secara berurutan
     setTimeout(() => { setSpinState([false, true, true, true]); }, 1000);
     setTimeout(() => { setSpinState([false, false, true, true]); }, 2000);
     setTimeout(() => { setSpinState([false, false, false, true]); }, 3000);
     
-    // Detik ke-4: Stop blur, hentikan suara putar, bunyikan success.mp3
     setTimeout(() => { 
       clearInterval(interval);
       setSpinState([false, false, false, false]); 
@@ -184,7 +188,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* HEADER GLOBAL */}
+      {/* HEADER GLOBAL KIRI (Kecuali Setup) */}
       {phase !== 'SETUP' && (
         <div className="absolute top-5 left-5 md:top-8 md:left-10 z-50 pointer-events-none flex flex-col gap-1">
           <span className="text-[10px] md:text-xs font-bold tracking-widest text-gray-500 uppercase">
@@ -196,6 +200,14 @@ export default function App() {
         </div>
       )}
 
+      {/* TOMBOL KONTROL BGM GLOBAL KANAN */}
+      <button 
+        onClick={() => setBgmPlaying(!bgmPlaying)} 
+        className="absolute top-5 right-5 md:top-8 md:right-10 z-50 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition px-3 py-1 border border-gray-800 rounded-full"
+      >
+        {bgmPlaying ? '🎵 BGM: ON' : '🔇 BGM: OFF'}
+      </button>
+
       {/* Elemen Audio */}
       <audio ref={audioRef} src="/bgm.mp3" loop preload="auto" />
       <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
@@ -203,14 +215,6 @@ export default function App() {
       {/* PHASE 1: SETUP */}
       {phase === 'SETUP' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center relative">
-          
-          <button 
-            onClick={() => setBgmPlaying(!bgmPlaying)} 
-            className="absolute top-5 right-5 md:top-8 md:right-10 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition px-3 py-1 border border-gray-800 rounded-full"
-          >
-            {bgmPlaying ? '🎵 BGM: ON' : '🔇 BGM: OFF'}
-          </button>
-
           <img src="/Logo.jpg" alt="The Builders" className="h-20 md:h-28 object-contain mb-8 rounded" onError={(e) => e.target.style.display = 'none'} />
           
           <h1 className="text-3xl md:text-5xl font-black tracking-[0.2em] mb-1 uppercase animate-subtle-pulse">
