@@ -187,7 +187,7 @@ export default function App() {
   const audioGameRef = useRef(null);
   const spinAudioRef = useRef(null);
 
-  // Logika BGM (Pergantian Track berdasarkan Phase)
+  // Logika BGM
   useEffect(() => {
     if (bgmPlaying) {
       if (phase === 'SETUP') {
@@ -301,7 +301,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* HEADER GLOBAL KIRI (Kecuali Setup) */}
+      {/* HEADER GLOBAL KIRI */}
       {phase !== 'SETUP' && (
         <div className="absolute top-5 left-5 md:top-8 md:left-10 z-50 pointer-events-none flex flex-col gap-1">
           <span className="text-[10px] md:text-xs font-bold tracking-widest text-gray-500 uppercase">
@@ -313,7 +313,7 @@ export default function App() {
         </div>
       )}
 
-      {/* TOMBOL KONTROL BGM GLOBAL KANAN */}
+      {/* TOMBOL KONTROL BGM GLOBAL */}
       <button 
         onClick={() => setBgmPlaying(!bgmPlaying)} 
         className="absolute top-5 right-5 md:top-8 md:right-10 z-50 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition px-3 py-1 border border-gray-800 rounded-full"
@@ -389,7 +389,7 @@ export default function App() {
         </div>
       )}
 
-      {/* PHASE 3: STRATEGY */}
+      {/* PHASE 3: STRATEGY (WITH CHEAT SHEET) */}
       {phase === 'STRATEGY' && (
         <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden pt-16 md:pt-0">
           <div className="w-full md:w-1/3 bg-[#121212] p-8 md:p-16 border-b md:border-b-0 md:border-r border-[#2A2A2A] z-10 sticky top-0 md:static md:flex md:flex-col md:justify-center">
@@ -406,16 +406,30 @@ export default function App() {
             <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-12 uppercase mt-4 md:mt-0">Formulate Strategy</h1>
             
             <div className="space-y-12">
+              {/* Box 1 with Cheat Sheet */}
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">1. Product & Why</label>
+                <div className="mb-3">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">1. Product & Why</label>
+                  <p className="text-[8px] md:text-[9px] text-gray-600 italic tracking-wider mt-1">Hint: Identifikasi risiko utama nasabah (Pajak / Warisan / Proteksi Income) dan cocokan dengan produk.</p>
+                </div>
                 <textarea value={answers.product} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Solusi produk yang ditawarkan..." onChange={(e) => setAnswers({...answers, product: e.target.value})}></textarea>
               </div>
+              
+              {/* Box 2 with Cheat Sheet */}
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">2. Networking Approach</label>
+                <div className="mb-3">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">2. Networking Approach</label>
+                  <p className="text-[8px] md:text-[9px] text-gray-600 italic tracking-wider mt-1">Hint: Gunakan metode F.O.R.M (Family, Occupation, Recreation) untuk mencari titik temu obrolan santai.</p>
+                </div>
                 <textarea value={answers.approach} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Cara membuka obrolan..." onChange={(e) => setAnswers({...answers, approach: e.target.value})}></textarea>
               </div>
+
+              {/* Box 3 with Cheat Sheet */}
               <div className="flex flex-col">
-                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-3">3. Transition</label>
+                <div className="mb-3">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-500 block">3. Transition</label>
+                  <p className="text-[8px] md:text-[9px] text-gray-600 italic tracking-wider mt-1">Hint: Gunakan jembatan halus. Misal: 'Ngomong-ngomong soal X, kamu sendiri udah siapin plan untuk Y belum?'</p>
+                </div>
                 <textarea value={answers.transition} className="w-full bg-transparent border-b border-[#3A3A3A] focus:border-white outline-none transition py-3 resize-none" rows="2" placeholder="Kalimat jembatan ke asuransi..." onChange={(e) => setAnswers({...answers, transition: e.target.value})}></textarea>
               </div>
             </div>
