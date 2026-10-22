@@ -73,49 +73,38 @@ export default function App() {
   const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
   const [copiedText, setCopiedText] = useState(false);
   
-  // Kontrol BGM
+  // Kontrol Audio
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const audioRef = useRef(null);
+  const spinAudioRef = useRef(null); // Ref khusus untuk suara spin looping
 
   useEffect(() => {
     if (audioRef.current) {
       if (bgmPlaying && phase === 'SETUP') {
-        audioRef.current.play().catch(() => setBgmPlaying(false)); // Tangkap error jika diblokir browser
+        audioRef.current.play().catch(() => setBgmPlaying(false));
       } else {
         audioRef.current.pause();
       }
     }
   }, [bgmPlaying, phase]);
 
-  // Revisi Sound: Efek "Tick" Tajam & Singkat
-  const playClickSound = () => {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Pitch tinggi
-      oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.03); // Turun drastis
-      
-      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.03); // Sangat singkat
-    } catch (e) {
-      console.log("Audio not supported");
-    }
-  };
+  // Fungsi Panggilan Audio Eksternal (Success & Clap)
+  const playSuccessSound = () => new Audio('/success.mp3').play().catch(() => {});
+  const playClapSound = () => new Audio('/clap.mp3').play().catch(() => {});
 
   const startSpin = (selectedMode) => {
     setMode(selectedMode);
     setPhase('SPINNING');
     setSpinState([true, true, true, true]);
+    
     if (phase === 'SETUP') {
       setAnswers({ product: '', approach: '', transition: '', handling: '' });
+    }
+
+    // Mainkan suara putaran (looping) dari awal
+    if (spinAudioRef.current) {
+      spinAudioRef.current.currentTime = 0;
+      spinAudioRef.current.play().catch(() => {});
     }
 
     const data = SLOT_DATA[selectedMode];
@@ -135,14 +124,21 @@ export default function App() {
       });
     }, 100);
 
-    setTimeout(() => { playClickSound(); setSpinState([false, true, true, true]); }, 1000);
-    setTimeout(() => { playClickSound(); setSpinState([false, false, true, true]); }, 2000);
-    setTimeout(() => { playClickSound(); setSpinState([false, false, false, true]); }, 3000);
+    // Hentikan blur secara berurutan
+    setTimeout(() => { setSpinState([false, true, true, true]); }, 1000);
+    setTimeout(() => { setSpinState([false, false, true, true]); }, 2000);
+    setTimeout(() => { setSpinState([false, false, false, true]); }, 3000);
+    
+    // Detik ke-4: Stop blur, hentikan suara putar, bunyikan success.mp3
     setTimeout(() => { 
-      playClickSound(); 
       clearInterval(interval);
       setSpinState([false, false, false, false]); 
       setTempResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4 });
+      
+      if (spinAudioRef.current) {
+        spinAudioRef.current.pause();
+      }
+      playSuccessSound(); 
     }, 4000);
   };
 
@@ -178,7 +174,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
       
-      {/* CSS Injeksi untuk Animasi Denyut Teks */}
       <style>{`
         @keyframes subtlePulse {
           0%, 100% { transform: scale(1); opacity: 1; }
@@ -189,23 +184,26 @@ export default function App() {
         }
       `}</style>
 
-      {/* HEADER GLOBAL (Muncul selain di Setup) */}
+      {/* HEADER GLOBAL */}
       {phase !== 'SETUP' && (
-        <div className="absolute top-5 left-5 md:top-8 md:left-10 z-50 pointer-events-none">
+        <div className="absolute top-5 left-5 md:top-8 md:left-10 z-50 pointer-events-none flex flex-col gap-1">
           <span className="text-[10px] md:text-xs font-bold tracking-widest text-gray-500 uppercase">
             Prospect Roulette
+          </span>
+          <span className="text-[8px] md:text-[10px] text-gray-500 italic lowercase tracking-wider">
+            by the builders of life community
           </span>
         </div>
       )}
 
-      {/* Elemen Audio BGM */}
+      {/* Elemen Audio */}
       <audio ref={audioRef} src="/bgm.mp3" loop preload="auto" />
+      <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
 
       {/* PHASE 1: SETUP */}
       {phase === 'SETUP' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center relative">
           
-          {/* Tombol Kontrol BGM */}
           <button 
             onClick={() => setBgmPlaying(!bgmPlaying)} 
             className="absolute top-5 right-5 md:top-8 md:right-10 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition px-3 py-1 border border-gray-800 rounded-full"
@@ -215,12 +213,13 @@ export default function App() {
 
           <img src="/Logo.jpg" alt="The Builders" className="h-20 md:h-28 object-contain mb-8 rounded" onError={(e) => e.target.style.display = 'none'} />
           
-          {/* Judul dengan Animasi Denyut */}
-          <h1 className="text-3xl md:text-5xl font-black tracking-[0.2em] mb-3 uppercase animate-subtle-pulse">
+          <h1 className="text-3xl md:text-5xl font-black tracking-[0.2em] mb-1 uppercase animate-subtle-pulse">
             Prospect Roulette
           </h1>
-          
-          <p className="text-gray-500 tracking-[0.3em] text-[10px] md:text-xs uppercase mb-16">
+          <p className="text-gray-500 text-[10px] md:text-xs italic mb-4 lowercase tracking-widest">
+            by the builders of life community
+          </p>
+          <p className="text-gray-500 tracking-[0.3em] text-[10px] md:text-xs uppercase mb-16 mt-2">
             The Builders: Case Study Simulator
           </p>
           
@@ -349,7 +348,7 @@ export default function App() {
               <button onClick={() => setPhase('STRATEGY')} className="w-full md:w-auto bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
                 Kembali
               </button>
-              <button onClick={() => setPhase('FINISHED')} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">
+              <button onClick={() => { playClapSound(); setPhase('FINISHED'); }} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">
                 Finalize Case
               </button>
             </div>
