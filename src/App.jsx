@@ -7,58 +7,126 @@ export const SLOT_DATA = {
   beginner: {
     demografi: [
       "Pria, 28 Thn, Single (Jakarta)", "Wanita, 25 Thn, Single (Surabaya)",
-      "Pria, 35 Thn, Menikah, 1 Anak (Bandung)", "Wanita, 32 Thn, Sedang Hamil (Medan)",
-      "Pria, 40 Thn, Menikah, 2 Anak (Semarang)"
+      "Pria, 35 Thn, Menikah, 1 Anak Balita (Bandung)", "Wanita, 32 Thn, Sedang Hamil (Medan)",
+      "Pria, 40 Thn, Menikah, 2 Anak SD (Semarang)", "Wanita, 29 Thn, Single (Makassar)",
+      "Pria, 38 Thn, Menikah, Istri IRT (Tangerang)", "Wanita, 45 Thn, Single (Bali)",
+      "Pria, 31 Thn, Menikah Baru 1 Tahun (Balikpapan)", "Wanita, 36 Thn, Cerai, 1 Anak (Palembang)",
+      "Pria, 27 Thn, Single, Tinggal Sama Ortu (Depok)", "Wanita, 30 Thn, Menikah, Belum Punya Anak (Bekasi)",
+      "Pria, 34 Thn, Menikah, 2 Anak Balita (Batam)", "Wanita, 28 Thn, Single, Perantau (Pekanbaru)",
+      "Pria, 42 Thn, Menikah, 1 Anak SMP (Yogyakarta)", "Wanita, 39 Thn, Menikah, 3 Anak (Samarinda)",
+      "Pria, 33 Thn, Single (Malang)", "Wanita, 26 Thn, Single, Siap Menikah (Bogor)",
+      "Pria, 37 Thn, Menikah, Anak Kembar (Manado)", "Wanita, 41 Thn, Menikah, Istri Bekerja (Pontianak)"
     ],
     finansial: [
       "Karyawan Swasta (10-15 Jt/bln)", "Manajer Area (25-35 Jt/bln)",
       "Pengusaha F&B (50 Jt+/bln)", "IT Developer (18-25 Jt/bln)",
-      "Pegawai Bank (12-15 Jt/bln)"
+      "Pegawai Bank (12-15 Jt/bln)", "Supervisor Pabrik (8-12 Jt/bln)",
+      "Dokter Spesialis (40 Jt+/bln)", "Digital Marketer (15-20 Jt/bln)",
+      "Dosen / Akademisi (10-15 Jt/bln)", "Pemilik Toko Grosir (30 Jt+/bln)",
+      "PNS/ASN Golongan III (7-10 Jt/bln)", "Freelance Consultant (15-30 Jt/bln)",
+      "HR Manager (20-25 Jt/bln)", "Sales Otomotif (10-20 Jt/bln fluktuatif)",
+      "Arsitek (15-25 Jt/bln)", "Pemilik Franchise Kecil (20-30 Jt/bln)",
+      "Content Creator (10-50 Jt/bln fluktuatif)", "Auditor Internal (12-18 Jt/bln)",
+      "Chef / Executive (15-20 Jt/bln)", "Karyawan BUMN (15-25 Jt/bln)"
     ],
     tanggungan: [
       "Sedang fokus kumpul DP Rumah", "Rutin menabung dana pendidikan anak",
       "Cicilan KPR rumah tinggal 3 tahun", "Punya asuransi kantor limit kecil",
-      "Suka traveling luar negeri 2x setahun"
+      "Suka traveling luar negeri 2x setahun", "Suka otomotif, modifikasi mobil",
+      "FOMO barang branded / konsumtif", "Suka nongkrong di cafe tiap hari",
+      "Rutin donasi/zakat jumlah lumayan", "Investasi rutin di Reksadana/Saham",
+      "Cicilan mobil baru jalan 1 tahun", "Mempersiapkan biaya pernikahan",
+      "Membantu uang saku bulanan adik kuliah", "Punya hobi sepeda / golf mahal",
+      "Baru beli rumah kedua (investasi)", "Cicilan apartemen di pusat kota",
+      "Fokus bayar les privat anak-anak", "Biaya perawatan hewan peliharaan mahal",
+      "Sering treat teman/keluarga makan besar", "Gaya hidup sehat (catering diet & gym mahal)"
     ],
     twist: [
       "Sangat sadar kesehatan, rutin gym", "Merasa asuransi kantor sudah cukup",
-      "Baru mendapat bonus tahunan", "Sedang merencanakan pensiun dini",
-      "Pernah beli unit link tapi kecewa"
+      "Baru mendapat bonus tahunan/warisan", "Sedang merencanakan pensiun dini",
+      "Pernah beli unit link tapi kecewa", "Sangat analitis, suka bandingkan tabel",
+      "Sibuk parah, meeting maksimal 15 menit", "Ada teman dekat yang juga agen asuransi",
+      "Menginginkan instrumen syariah saja", "Percaya mitos asuransi buang uang",
+      "Baru saja promosi jabatan", "Sedang cari instrumen potong pajak",
+      "Istri/suaminya sangat dominan soal uang", "Pernah klaim kesehatan dan puas",
+      "Sangat peduli perlindungan anak", "Gaptek, kurang paham investasi",
+      "Suka produk tradisional (non-unit link)", "Nasabah VIP di bank",
+      "Punya pengalaman buruk dengan agen lama yang kabur", "Selalu menawar/minta diskon atau cashback"
     ]
   },
   hardcore: {
     demografi: [
       "Pria, 26 Thn, Tulang Punggung (Kab. Bogor)", "Wanita, 48 Thn, Suami Pensiun (Solo)",
       "Pria, 55 Thn, 4 Anak (Tasikmalaya)", "Pria, 30 Thn, Duda, 2 Anak Balita (Sidoarjo)",
-      "Wanita, 50 Thn, Single Parent (Malang)"
+      "Wanita, 50 Thn, Single Parent (Malang)", "Pria, 42 Thn, Menikah, 3 Anak (Cirebon)",
+      "Wanita, 39 Thn, Menikah, Suami Sakit (Banyumas)", "Pria, 27 Thn, Single, Kos (Jakarta Coret)",
+      "Wanita, 60 Thn, Janda, Urus Cucu (Kediri)", "Pria, 35 Thn, Menikah, Istri Hamil Tua (Brebes)",
+      "Wanita, 23 Thn, Fresh Grad, Coba Bisnis (Depok)", "Pria, 45 Thn, Belum Menikah (Madiun)",
+      "Wanita, 33 Thn, Korban KDRT, 1 Anak (Karawang)", "Pria, 52 Thn, Pekerja Kasar (Tegal)",
+      "Wanita, 40 Thn, Istri Kedua (Sukabumi)", "Pria, 38 Thn, Merantau Tinggalkan Keluarga (Kupang)",
+      "Wanita, 29 Thn, Single, Ortu Sakit Keras (Palu)", "Pria, 47 Thn, Cerai Mati, 3 Anak (Ambon)",
+      "Wanita, 55 Thn, Tidak Punya Anak (Mataram)", "Pria, 31 Thn, Menikah, Tinggal di Mertua (Garut)"
     ],
     finansial: [
       "Admin Gudang (UMR 4,5 Jt/bln)", "Driver Taksi Online (4-7 Jt/bln)",
       "Freelancer Desain (3-6 Jt/bln)", "Pemilik Warung Kopi (5-8 Jt/bln)",
-      "Karyawan Potong Gaji (3,5 Jt/bln)"
+      "Karyawan Potong Gaji (3,5 Jt/bln)", "Guru Honorer (2-3 Jt/bln)",
+      "SPG Mall (UMR 5 Jt/bln)", "Pekerja Serabutan (2-4 Jt/bln)",
+      "Bisnis Online Menurun (Sisa 5 Jt/bln)", "Agen Properti Pemula (0-10 Jt/bln komisi)",
+      "Buruh Pabrik (UMR)", "Supir Pribadi (4-5 Jt/bln)",
+      "Tukang Cukur / Salon Kecil (3-5 Jt/bln)", "Pedagang Pasar (Fluktuatif 2-6 Jt/bln)",
+      "Petani / Peternak (Pendapatan Musiman)", "Karyawan Startup (Rawan Layoff, 8 Jt/bln)",
+      "Satpam Perumahan (3,5 Jt/bln)", "Kurir Ekspedisi (4-6 Jt/bln)",
+      "Penjaga Konter HP (2,5 Jt/bln)", "Pengrajin Lokal (Pendapatan tidak menentu)"
     ],
     tanggungan: [
-      "Sandwich Generation berat", "Cicilan pinjol numpuk",
+      "Sandwich Generation berat", "Cicilan pinjol / paylater numpuk",
       "Bayar KPR & Mobil, sisa pas-pasan", "Orang tua masuk RS tanpa asuransi",
-      "Gaji numpang lewat, nol dana darurat"
+      "Gaji numpang lewat, nol dana darurat", "Bisnis baru buka, uang kas menipis",
+      "Istri resign, income keluarga turun drastis", "Anak pertama kuliah, kedua SMA",
+      "Sedang melunasi hutang bisnis masa lalu", "Tinggal di mertua, ingin segera mandiri",
+      "Biaya pengobatan rutin ortu tiap bulan", "Terjerat arisan bodong / investasi bodong",
+      "Cicilan motor nunggak 2 bulan", "Banyak bantu saudara yang menganggur",
+      "Sering pinjam uang kasbon kantor", "Sewa kontrakan tahunan akan habis",
+      "Gali lubang tutup lubang kartu kredit", "Anak butuh biaya terapi khusus",
+      "Pendapatan habis untuk gaya hidup palsu", "Baru kena tipu rekan bisnis"
     ],
     twist: [
       "Riwayat Asam Urat & Kolesterol", "Perokok berat (2 bungkus/hari)",
       "Trauma klaim ayah ditolak", "Baru sebulan lalu kena PHK",
-      "Anti-asuransi (menganggap penipuan)"
+      "Anti-asuransi (menganggap haram/penipu)", "Pernah operasi batu empedu",
+      "Gula darah borderline (pradiabetes)", "Sedang proses cerai (gono-gini)",
+      "Overweight/Obesitas, jarang olahraga", "Pernah ditipu agen bodong",
+      "Punya tumor jinak", "Bekerja di area risiko tinggi (tambang/lapangan)",
+      "Sangat apatis terhadap masa depan", "Suami melarang keras ikut asuransi",
+      "Percaya pengobatan alternatif / dukun", "Pernah stroke ringan 2 tahun lalu",
+      "Hipertensi tidak terkontrol", "Sangat gengsi mengakui kesulitan uang",
+      "Suka berdebat dan merasa paling pintar", "Punya masalah mental (anxiety/depresi ringan)"
     ]
   }
 };
 
 export const OBJECTIONS = [
-  "Uang saya lebih baik diputar di bisnis.",
-  "Asuransi kantor saya sudah cover semuanya.",
-  "Saya tanya istri/suami dulu ya.",
-  "Preminya kemahalan, lagi banyak cicilan.",
-  "Teman saya klaimnya susah, asuransi itu nipu.",
-  "Nanti saja, saya masih muda dan sehat.",
-  "Saya sudah punya BPJS, itu saja cukup.",
-  "Rugi dong uang hangus kalau tidak sakit."
+  "Uang saya lebih baik diputar di bisnis atau deposito.",
+  "Asuransi kantor saya sudah cover semuanya, ngapain dobel?",
+  "Saya harus diskusi dan minta izin istri/suami saya dulu.",
+  "Preminya kemahalan, saya lagi banyak pengeluaran cicilan.",
+  "Teman saya klaimnya susah dan ditolak, asuransi itu nipu.",
+  "Nanti saja ya, saya masih muda dan sehat kok.",
+  "Saya sudah punya BPJS, itu saja sudah cukup.",
+  "Beli asuransi jiwa itu pamali, kayak nyumpahin cepat mati.",
+  "Uang di asuransi itu hangus kalau tidak sakit, rugi dong.",
+  "Saya tidak percaya sama agen asuransi, banyak yang kabur.",
+  "Saya lagi fokus kumpulin uang buat beli rumah/mobil.",
+  "Nanti kalau butuh saya hubungi kamu, jangan di-push sekarang.",
+  "Kalau perusahaan asuransinya bangkrut, uang saya hilang dong?",
+  "Saya mau investasi saham/kripto saja, returnnya lebih pasti.",
+  "Saya bandingkan dulu dengan proposal dari perusahaan lain ya.",
+  "Penghasilan saya lagi nggak menentu bulan ini.",
+  "Keluarga saya umur panjang semua, jarang ada yang sakit parah.",
+  "Saya trauma ditawari unit link, saldo saya habis dimakan biaya.",
+  "Agama saya tidak memperbolehkan asuransi konvensional.",
+  "Kamu itu agen baru kan? Saya maunya dilayani sama manajer."
 ];
 // ==========================================
 
