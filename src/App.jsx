@@ -183,24 +183,29 @@ export default function App() {
   
   // Kontrol Audio BGM
   const [bgmPlaying, setBgmPlaying] = useState(false);
-  const audioRef = useRef(null);
+  const audioSetupRef = useRef(null);
+  const audioGameRef = useRef(null);
   const spinAudioRef = useRef(null);
 
-  // Logika BGM (Looping sepanjang sesi & Penyesuaian Volume)
+  // Logika BGM (Pergantian Track berdasarkan Phase)
   useEffect(() => {
-    if (audioRef.current) {
-      if (bgmPlaying) {
-        audioRef.current.play().catch(() => setBgmPlaying(false));
-      } else {
-        audioRef.current.pause();
-      }
-
-      // Volume 100% di halaman depan, 70% di halaman selanjutnya
+    if (bgmPlaying) {
       if (phase === 'SETUP') {
-        audioRef.current.volume = 1.0;
+        if (audioGameRef.current) audioGameRef.current.pause();
+        if (audioSetupRef.current) {
+          audioSetupRef.current.volume = 1.0;
+          audioSetupRef.current.play().catch(() => setBgmPlaying(false));
+        }
       } else {
-        audioRef.current.volume = 0.4;
+        if (audioSetupRef.current) audioSetupRef.current.pause();
+        if (audioGameRef.current) {
+          audioGameRef.current.volume = 0.4;
+          audioGameRef.current.play().catch(() => setBgmPlaying(false));
+        }
       }
+    } else {
+      if (audioSetupRef.current) audioSetupRef.current.pause();
+      if (audioGameRef.current) audioGameRef.current.pause();
     }
   }, [bgmPlaying, phase]);
 
@@ -317,7 +322,8 @@ export default function App() {
       </button>
 
       {/* Elemen Audio */}
-      <audio ref={audioRef} src="/bgm.mp3" loop preload="auto" />
+      <audio ref={audioSetupRef} src="/bgm.mp3" loop preload="auto" />
+      <audio ref={audioGameRef} src="/bgm2.mp3" loop preload="auto" />
       <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
 
       {/* PHASE 1: SETUP */}
