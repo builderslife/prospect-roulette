@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // ==========================================
 // DATABASE PROFIL & OBJECTION
@@ -72,25 +72,39 @@ export default function App() {
   const [spinState, setSpinState] = useState([true, true, true, true]);
   const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
   const [copiedText, setCopiedText] = useState(false);
+  
+  // Kontrol BGM
+  const [bgmPlaying, setBgmPlaying] = useState(false);
+  const audioRef = useRef(null);
 
-  // Revisi Sound: Mechanical Click / Thud
+  useEffect(() => {
+    if (audioRef.current) {
+      if (bgmPlaying && phase === 'SETUP') {
+        audioRef.current.play().catch(() => setBgmPlaying(false)); // Tangkap error jika diblokir browser
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [bgmPlaying, phase]);
+
+  // Revisi Sound: Efek "Tick" Tajam & Singkat
   const playClickSound = () => {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       
-      oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.05);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Pitch tinggi
+      oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.03); // Turun drastis
       
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
       
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
       oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.05);
+      oscillator.stop(audioCtx.currentTime + 0.03); // Sangat singkat
     } catch (e) {
       console.log("Audio not supported");
     }
@@ -100,7 +114,6 @@ export default function App() {
     setMode(selectedMode);
     setPhase('SPINNING');
     setSpinState([true, true, true, true]);
-    // Reset answers only if starting completely fresh from SETUP
     if (phase === 'SETUP') {
       setAnswers({ product: '', approach: '', transition: '', handling: '' });
     }
@@ -163,14 +176,53 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans selection:bg-white selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans selection:bg-white selection:text-black overflow-x-hidden relative">
       
+      {/* CSS Injeksi untuk Animasi Denyut Teks */}
+      <style>{`
+        @keyframes subtlePulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.03); opacity: 0.8; }
+        }
+        .animate-subtle-pulse {
+          animation: subtlePulse 4s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* HEADER GLOBAL (Muncul selain di Setup) */}
+      {phase !== 'SETUP' && (
+        <div className="absolute top-5 left-5 md:top-8 md:left-10 z-50 pointer-events-none">
+          <span className="text-[10px] md:text-xs font-bold tracking-widest text-gray-500 uppercase">
+            Prospect Roulette
+          </span>
+        </div>
+      )}
+
+      {/* Elemen Audio BGM */}
+      <audio ref={audioRef} src="/bgm.mp3" loop preload="auto" />
+
       {/* PHASE 1: SETUP */}
       {phase === 'SETUP' && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center relative">
+          
+          {/* Tombol Kontrol BGM */}
+          <button 
+            onClick={() => setBgmPlaying(!bgmPlaying)} 
+            className="absolute top-5 right-5 md:top-8 md:right-10 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition px-3 py-1 border border-gray-800 rounded-full"
+          >
+            {bgmPlaying ? '🎵 BGM: ON' : '🔇 BGM: OFF'}
+          </button>
+
           <img src="/Logo.jpg" alt="The Builders" className="h-20 md:h-28 object-contain mb-8 rounded" onError={(e) => e.target.style.display = 'none'} />
-          <h1 className="text-3xl md:text-5xl font-black tracking-[0.2em] mb-3 uppercase">Prospect Roulette</h1>
-          <p className="text-gray-500 tracking-[0.3em] text-[10px] md:text-xs uppercase mb-16">The Builders: Case Study Simulator</p>
+          
+          {/* Judul dengan Animasi Denyut */}
+          <h1 className="text-3xl md:text-5xl font-black tracking-[0.2em] mb-3 uppercase animate-subtle-pulse">
+            Prospect Roulette
+          </h1>
+          
+          <p className="text-gray-500 tracking-[0.3em] text-[10px] md:text-xs uppercase mb-16">
+            The Builders: Case Study Simulator
+          </p>
           
           <div className="flex flex-col w-full max-w-sm gap-4">
             <button onClick={() => startSpin('beginner')} className="w-full bg-white text-black py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase">
@@ -185,7 +237,7 @@ export default function App() {
 
       {/* PHASE 2: SPINNING */}
       {phase === 'SPINNING' && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full">
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full pt-16 md:pt-0">
           <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-12 border border-[#2A2A2A] flex flex-col gap-4 text-left shadow-2xl rounded-sm">
             <h2 className="text-[10px] md:text-xs tracking-[0.3em] text-gray-500 font-bold uppercase mb-6 text-center">Randomizing Target...</h2>
             
@@ -222,8 +274,8 @@ export default function App() {
 
       {/* PHASE 3: STRATEGY */}
       {phase === 'STRATEGY' && (
-        <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
-          <div className="w-full md:w-1/3 bg-[#121212] p-8 md:p-16 border-b md:border-b-0 md:border-r border-[#2A2A2A] z-10 sticky top-0 md:static">
+        <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden pt-16 md:pt-0">
+          <div className="w-full md:w-1/3 bg-[#121212] p-8 md:p-16 border-b md:border-b-0 md:border-r border-[#2A2A2A] z-10 sticky top-0 md:static md:flex md:flex-col md:justify-center">
             <h2 className="text-[10px] tracking-[0.3em] text-gray-500 font-bold mb-8 uppercase">Target Profile</h2>
             <div className="space-y-6 text-sm md:text-base">
               <div><p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Demografi</p><p className="font-bold">{result.slot1}</p></div>
@@ -234,7 +286,7 @@ export default function App() {
           </div>
           
           <div className="w-full md:w-2/3 p-8 md:p-20 overflow-y-auto flex-1 hide-scrollbar">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-12 uppercase">Formulate Strategy</h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-12 uppercase mt-4 md:mt-0">Formulate Strategy</h1>
             
             <div className="space-y-12">
               <div className="flex flex-col">
@@ -251,7 +303,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-16 flex justify-end gap-4 pb-12 md:pb-0">
+            <div className="mt-16 flex flex-col md:flex-row justify-end gap-4 pb-12 md:pb-0">
               <button onClick={() => setPhase('SPINNING')} className="bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
                 Kembali
               </button>
@@ -265,8 +317,8 @@ export default function App() {
 
       {/* PHASE 4: OBJECTION */}
       {phase === 'OBJECTION' && (
-        <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
-          <div className="hidden md:block w-1/3 bg-[#121212] p-16 border-r border-[#2A2A2A]">
+        <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden pt-16 md:pt-0">
+          <div className="hidden md:flex w-1/3 bg-[#121212] p-16 border-r border-[#2A2A2A] flex-col justify-center">
             <h2 className="text-[10px] tracking-[0.3em] text-gray-500 font-bold mb-8 uppercase">Current Target</h2>
             <div className="space-y-6 opacity-75 text-sm">
               <p><strong className="block text-[10px] text-gray-500 uppercase tracking-wider mb-2">Demografi:</strong> {result.slot1}</p>
@@ -274,7 +326,7 @@ export default function App() {
             </div>
           </div>
           
-          <div className="w-full md:w-2/3 p-8 md:p-20 overflow-y-auto flex-1 flex flex-col justify-center hide-scrollbar">
+          <div className="w-full md:w-2/3 p-8 md:p-20 overflow-y-auto flex-1 flex flex-col justify-center hide-scrollbar mt-4 md:mt-0">
             <h1 className="text-[10px] font-bold tracking-[0.3em] text-red-500 mb-6 uppercase animate-pulse">Objection Triggered</h1>
             <p className="text-3xl md:text-5xl font-bold mb-12 text-white leading-tight">"{objection}"</p>
             
@@ -293,7 +345,7 @@ export default function App() {
               <textarea value={answers.handling} className="w-full bg-transparent border-b-2 border-red-500 focus:border-white outline-none transition py-3 resize-none text-base md:text-lg" rows="4" placeholder="Ketik respons Anda di sini..." onChange={(e) => setAnswers({...answers, handling: e.target.value})}></textarea>
             </div>
 
-            <div className="mt-12 flex gap-4 pb-12">
+            <div className="mt-12 flex flex-col md:flex-row gap-4 pb-12">
               <button onClick={() => setPhase('STRATEGY')} className="w-full md:w-auto bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
                 Kembali
               </button>
@@ -307,7 +359,7 @@ export default function App() {
 
       {/* PHASE 5: FINISHED */}
       {phase === 'FINISHED' && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12 pt-20 md:pt-12">
           <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-12 border border-[#2A2A2A] mb-8 rounded-sm">
             <h2 className="text-sm font-bold uppercase tracking-widest mb-8 text-center border-b border-[#2A2A2A] pb-6">Case Summary</h2>
             <div className="text-sm md:text-base space-y-6 text-gray-400 leading-relaxed">
