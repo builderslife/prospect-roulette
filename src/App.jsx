@@ -177,12 +177,6 @@ export const LOCATIONS = [
 ];
 // ==========================================
 
-// Global Audio Helper (Mencegah garbage collection & memastikan play)
-const playSound = (src) => {
-  const audio = new Audio(src);
-  audio.play().catch(e => console.warn(`Gagal memutar ${src}:`, e));
-};
-
 export default function App() {
   // Global States
   const [phase, setPhase] = useState('SETUP');
@@ -209,11 +203,36 @@ export default function App() {
   const [foundKondisi, setFoundKondisi] = useState(false);
   const [timeStats, setTimeStats] = useState({ discoveryTime: 0, objectionTime: 0, status: 'WIN' });
 
-  // Audio Refs (BGM & Looping Spin)
+  // Tanda Peringatan Waktu agar tidak berulang
+  const warningTriggered = useRef(false);
+
+  // ==========================================
+  // AUDIO REFS & LOGIC (Anti-Garbage Collection)
+  // ==========================================
   const [bgmPlaying, setBgmPlaying] = useState(false);
+  
   const audioSetupRef = useRef(null);
   const audioGameRef = useRef(null);
   const spinAudioRef = useRef(null);
+  const sfxSuccessRef = useRef(null);
+  const sfxClapRef = useRef(null);
+  const sfxCheck1Ref = useRef(null);
+  const sfxCheck2Ref = useRef(null);
+  const sfxBuzzerRef = useRef(null);
+  const sfxTimeLimitRef = useRef(null);
+  const sfxWinRef = useRef(null);
+  const sfxLostRef = useRef(null);
+  const sfxFailRef = useRef(null);
+  const sfxPlayer1Ref = useRef(null);
+  const sfxPlayer2Ref = useRef(null);
+
+  // Helper Pemutar Suara yang Aman
+  const safePlay = (audioRef) => {
+    if (audioRef && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
+  };
 
   // BGM Logic (Menyala tanpa henti dari SETUP ke VS_PUBLIC_BRIEFING)
   const isSetupPhase = phase === 'SETUP' || phase === 'VS_PUBLIC_BRIEFING';
@@ -250,23 +269,24 @@ export default function App() {
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
 
-  // Audio Triggers & Timeouts based on timeLeft
+  // Waktu Habis & Alarm Peringatan
   useEffect(() => {
     if (timerActive) {
-      // Trigger Warning Sound (Di bawah 3:30 / 210 detik)
-      if (timeLeft === 210 && phase === 'VS_GAMEPLAY') {
-        playSound('/timelimit.mp3');
+      // Trigger Warning Sound (Tepat atau melewati 1.30 menit / 90 detik)
+      if (timeLeft <= 90 && timeLeft > 0 && phase === 'VS_GAMEPLAY' && !warningTriggered.current) {
+        warningTriggered.current = true;
+        safePlay(sfxTimeLimitRef);
       }
       
-      // Menggunakan <= 0 memastikan jika terkena penalti dan melompati angka 0, tetap trigger kalah
+      // Jika Waktu Habis (Gunakan <= 0 agar tetap ke-trigger jika terkena penalti)
       if (timeLeft <= 0) {
         setTimerActive(false);
         if (phase === 'VS_GAMEPLAY') {
-          playSound('/fail.mp3');
+          safePlay(sfxFailRef);
           setTimeStats(prev => ({ ...prev, discoveryTime: 420, status: 'LOSE_DISCOVERY' }));
           setPhase('VS_STATS');
         } else if (phase === 'VS_OBJECTION_PLAY') {
-          playSound('/finalizedlost.mp3');
+          safePlay(sfxLostRef);
           setTimeStats(prev => ({ ...prev, objectionTime: 90, status: 'LOSE_OBJECTION' }));
           setPhase('VS_STATS');
         }
@@ -344,7 +364,7 @@ export default function App() {
       if (spinAudioRef.current) {
         spinAudioRef.current.pause();
       }
-      playSound('/success.mp3'); 
+      safePlay(sfxSuccessRef);
     }, 4000);
   };
 
@@ -377,28 +397,16 @@ export default function App() {
     setPhase('SETUP');
   };
 
-  // ==========================================
-  // ACTION HANDLERS (VERSUS MODE)
-  // ==========================================
+  // --- VERSUS MECHANICS ---
   const triggerVersusSpin = () => {
     setVsSpinning(true);
     setVsRolled(false);
-    
     setFoundTanggungan(false);
     setFoundKondisi(false);
+    warningTriggered.current = false; // Reset status warning
     setTimeStats({ discoveryTime: 0, objectionTime: 0, status: 'WIN' });
     
-    let allDemografi = [...SLOT_DATA.beginner.demografi, ...SLOT_DATA.hardcore.demografi];
-    let dataPool = {
-      finansial: [...SLOT_DATA.beginner.finansial, ...SLOT_DATA.hardcore.finansial],
-      tanggungan: [...SLOT_DATA.beginner.tanggungan, ...SLOT_DATA.hardcore.tanggungan],
-      twist: [...SLOT_DATA.beginner.twist, ...SLOT_DATA.hardcore.twist]
-    };
-    
-    const data = {
-      ...dataPool,
-      demografi: allDemografi.filter(d => d.startsWith(vsP2Gender))
-    };
+    const data = getFilteredData(vsP2Gender === 'Pria' ? 'versus_pria' : 'versus_wanita');
     
     if (spinAudioRef.current) {
       spinAudioRef.current.currentTime = 0;
@@ -426,7 +434,7 @@ export default function App() {
       setVsSpinning(false);
       setVsRolled(true);
       if (spinAudioRef.current) spinAudioRef.current.pause();
-      playSound('/success.mp3');
+      safePlay(sfxSuccessRef);
     }, 3000);
   };
 
@@ -438,33 +446,33 @@ export default function App() {
     if (type === 'kondisi') { setFoundKondisi(true); newK = true; }
 
     if (newT && newK) {
-      playSound('/check2.mp3');
+      safePlay(sfxCheck2Ref);
       setTimerActive(false);
       setTimeStats({ ...timeStats, discoveryTime: 420 - timeLeft });
       const randomObj = OBJECTIONS[Math.floor(Math.random() * OBJECTIONS.length)];
       setObjection(randomObj);
       setTimeout(() => setPhase('VS_OBJECTION_READ'), 1000);
     } else if (newT || newK) {
-      playSound('/check1.mp3');
+      safePlay(sfxCheck1Ref);
     }
   };
 
   const handleRedFlag = () => {
-    playSound('/buzzer.mp3');
+    safePlay(sfxBuzzerRef);
     document.body.classList.add('bg-red-900');
     setTimeout(() => document.body.classList.remove('bg-red-900'), 200);
     setTimeLeft(t => Math.max(0, t - 30));
   };
 
   const startObjectionTimer = () => {
-    playSound('/timelimit.mp3');
+    safePlay(sfxTimeLimitRef);
     setTimeLeft(90); // 1.30 Menit (90 Detik)
     setTimerActive(true);
     setPhase('VS_OBJECTION_PLAY');
   };
 
   const finalizeVersusCase = () => {
-    playSound('/finalizedwin.mp3');
+    safePlay(sfxWinRef);
     setTimerActive(false);
     setTimeStats(prev => ({ ...prev, objectionTime: 90 - timeLeft, status: 'WIN' }));
     setPhase('VS_STATS');
@@ -507,10 +515,21 @@ export default function App() {
         {bgmPlaying ? '🎵 BGM: ON' : '🔇 BGM: OFF'}
       </button>
 
-      {/* Elemen Audio */}
+      {/* Elemen Audio Tag (Aman dari Garbage Collection) */}
       <audio ref={audioSetupRef} src="/bgm.mp3" loop preload="auto" />
       <audio ref={audioGameRef} src="/bgm2.mp3" loop preload="auto" />
       <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
+      <audio ref={sfxSuccessRef} src="/success.mp3" preload="auto" />
+      <audio ref={sfxClapRef} src="/clap.mp3" preload="auto" />
+      <audio ref={sfxCheck1Ref} src="/check1.mp3" preload="auto" />
+      <audio ref={sfxCheck2Ref} src="/check2.mp3" preload="auto" />
+      <audio ref={sfxBuzzerRef} src="/buzzer.mp3" preload="auto" />
+      <audio ref={sfxTimeLimitRef} src="/timelimit.mp3" preload="auto" />
+      <audio ref={sfxWinRef} src="/finalizedwin.mp3" preload="auto" />
+      <audio ref={sfxLostRef} src="/finalizedlost.mp3" preload="auto" />
+      <audio ref={sfxFailRef} src="/fail.mp3" preload="auto" />
+      <audio ref={sfxPlayer1Ref} src="/player1.mp3" preload="auto" />
+      <audio ref={sfxPlayer2Ref} src="/player2.mp3" preload="auto" />
 
       {/* PHASE 1: SETUP */}
       {phase === 'SETUP' && (
@@ -545,16 +564,16 @@ export default function App() {
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 1 (Agen)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>{setVsP1Gender('Pria'); playSound('/player1.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
-                      <button onClick={()=>{setVsP1Gender('Wanita'); playSound('/player1.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP1Gender('Pria'); safePlay(sfxPlayer1Ref);}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
+                      <button onClick={()=>{setVsP1Gender('Wanita'); safePlay(sfxPlayer1Ref);}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
                     </div>
                   </div>
                   
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 2 (Target)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>{setVsP2Gender('Pria'); playSound('/player2.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
-                      <button onClick={()=>{setVsP2Gender('Wanita'); playSound('/player2.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP2Gender('Pria'); safePlay(sfxPlayer2Ref);}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
+                      <button onClick={()=>{setVsP2Gender('Wanita'); safePlay(sfxPlayer2Ref);}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
                     </div>
                   </div>
                 </div>
@@ -630,7 +649,7 @@ export default function App() {
               <h2 className="text-[10px] tracking-[0.3em] text-gray-500 font-bold uppercase">Target Dashboard</h2>
               <p className="text-[10px] text-gray-400 mt-1">Hanya dibaca oleh Pemain 2</p>
             </div>
-            <div className={`text-4xl md:text-6xl font-black font-mono tracking-tighter ${timeLeft <= 210 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+            <div className={`text-4xl md:text-6xl font-black font-mono tracking-tighter ${timeLeft <= 90 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
               {formatTime(timeLeft)}
             </div>
           </div>
@@ -652,7 +671,7 @@ export default function App() {
             </div>
           </div>
 
-          {timeLeft <= 210 && (
+          {timeLeft <= 90 && (
             <div className="bg-yellow-900/40 border border-yellow-600 p-4 mb-6 animate-pulse text-center">
               <p className="text-xs font-bold text-yellow-400 uppercase tracking-widest">ACTING INSTRUCTION!</p>
               <p className="text-sm text-yellow-200 mt-1">Lihat jam tangan Anda sekarang, katakan: <i>"Eh sori, gue bentar lagi ada urusan nih. Tumben ngajak ketemuan, ada apa emangnya?"</i></p>
@@ -880,7 +899,7 @@ export default function App() {
             </div>
             <div className="mt-12 flex flex-col md:flex-row gap-4 pb-12">
               <button onClick={() => setPhase('STRATEGY')} className="w-full md:w-auto bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">Kembali</button>
-              <button onClick={() => { playSound('/clap.mp3'); setPhase('FINISHED'); }} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">Finalize Case</button>
+              <button onClick={() => { safePlay(sfxClapRef); setPhase('FINISHED'); }} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">Finalize Case</button>
             </div>
           </div>
         </div>
