@@ -230,8 +230,55 @@ export default function App() {
   const safePlay = (audioRef) => {
     if (audioRef && audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch((err) => {
+        // Jangan ditelan diam-diam: biar kelihatan di DevTools kalau diblok browser
+        console.warn('[Audio] Gagal play:', audioRef.current?.src, err?.name, err?.message);
+      });
     }
+  };
+
+  // ==========================================
+  // AUDIO UNLOCK (FIX BUG SUARA TIDAK MUNCUL)
+  // Browser (terutama Safari / iPhone / iPad) hanya mengizinkan play() kalau
+  // dipicu langsung oleh klik user. Suara yang dipicu TIMER (useEffect) akan
+  // diblok, kecuali elemen audio itu sudah pernah "dibuka" lewat klik.
+  // Fungsi ini memutar semua SFX secara mute lalu langsung pause, dipanggil
+  // saat user klik tombol, supaya nanti bisa diputar otomatis oleh timer.
+  // ==========================================
+  const unlockSfx = () => {
+    const refs = [
+      sfxTimeLimitRef, sfxFailRef, sfxLostRef, sfxWinRef,
+      sfxCheck1Ref, sfxCheck2Ref, sfxBuzzerRef
+    ];
+    refs.forEach((ref) => {
+      const el = ref.current;
+      if (!el || el.dataset.unlocked === 'true') return;
+      el.muted = true;
+      const p = el.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.muted = false;
+          el.dataset.unlocked = 'true';
+        }).catch(() => {
+          el.muted = false;
+        });
+      } else {
+        el.pause();
+        el.currentTime = 0;
+        el.muted = false;
+      }
+    });
+  };
+
+  const startVersusGameplay = () => {
+    unlockSfx(); // Wajib dipanggil di dalam klik user
+    setPhase('VS_GAMEPLAY');
+    setTimeLeft(420);
+    setTimerActive(true);
+    setFoundTanggungan(false);
+    setFoundKondisi(false);
   };
 
   // BGM Logic (Menyala tanpa henti dari SETUP ke VS_PUBLIC_BRIEFING)
@@ -633,7 +680,7 @@ export default function App() {
                   <button onClick={triggerVersusSpin} className="flex-1 bg-transparent border border-white text-white py-4 font-bold tracking-widest text-xs hover:bg-white hover:text-black transition uppercase">Spin Ulang</button>
                 </div>
 
-                <button onClick={() => { setPhase('VS_GAMEPLAY'); setTimerActive(true); setTimeLeft(420); setFoundTanggungan(false); setFoundKondisi(false); }} className="w-full bg-white text-black py-5 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
+                <button onClick={startVersusGameplay} className="w-full bg-white text-black py-5 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
                   Target Ready (Start Timer)
                 </button>
               </>
