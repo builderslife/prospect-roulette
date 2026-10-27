@@ -177,6 +177,12 @@ export const LOCATIONS = [
 ];
 // ==========================================
 
+// Global Audio Helper (Mencegah garbage collection & memastikan play)
+const playSound = (src) => {
+  const audio = new Audio(src);
+  audio.play().catch(e => console.warn(`Gagal memutar ${src}:`, e));
+};
+
 export default function App() {
   // Global States
   const [phase, setPhase] = useState('SETUP');
@@ -203,26 +209,11 @@ export default function App() {
   const [foundKondisi, setFoundKondisi] = useState(false);
   const [timeStats, setTimeStats] = useState({ discoveryTime: 0, objectionTime: 0, status: 'WIN' });
 
-  // Audio Refs
+  // Audio Refs (BGM & Looping Spin)
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const audioSetupRef = useRef(null);
   const audioGameRef = useRef(null);
   const spinAudioRef = useRef(null);
-
-  // Audio Triggers
-  const playSuccessSound = () => new Audio('/success.mp3').play().catch(() => {});
-  const playClapSound = () => new Audio('/clap.mp3').play().catch(() => {});
-  const playCheck1Sound = () => new Audio('/check1.mp3').play().catch(() => {});
-  const playCheck2Sound = () => new Audio('/check2.mp3').play().catch(() => {});
-  const playBuzzerSound = () => new Audio('/buzzer.mp3').play().catch(() => {});
-  const playTimeLimitSound = () => new Audio('/timelimit.mp3').play().catch(() => {});
-  const playFinalizedWinSound = () => new Audio('/finalizedwin.mp3').play().catch(() => {});
-  const playFinalizedLostSound = () => new Audio('/finalizedlost.mp3').play().catch(() => {});
-  const playFailSound = () => new Audio('/fail.mp3').play().catch(() => {});
-  
-  // Character Selection Sounds
-  const playPlayer1Sound = () => new Audio('/player1.mp3').play().catch(() => {});
-  const playPlayer2Sound = () => new Audio('/player2.mp3').play().catch(() => {});
 
   // BGM Logic (Menyala tanpa henti dari SETUP ke VS_PUBLIC_BRIEFING)
   const isSetupPhase = phase === 'SETUP' || phase === 'VS_PUBLIC_BRIEFING';
@@ -264,17 +255,18 @@ export default function App() {
     if (timerActive) {
       // Trigger Warning Sound (Di bawah 3:30 / 210 detik)
       if (timeLeft === 210 && phase === 'VS_GAMEPLAY') {
-        playTimeLimitSound();
+        playSound('/timelimit.mp3');
       }
-      // Kalah karena waktu habis
-      if (timeLeft === 0) {
+      
+      // Menggunakan <= 0 memastikan jika terkena penalti dan melompati angka 0, tetap trigger kalah
+      if (timeLeft <= 0) {
         setTimerActive(false);
         if (phase === 'VS_GAMEPLAY') {
-          playFailSound();
+          playSound('/fail.mp3');
           setTimeStats(prev => ({ ...prev, discoveryTime: 420, status: 'LOSE_DISCOVERY' }));
           setPhase('VS_STATS');
         } else if (phase === 'VS_OBJECTION_PLAY') {
-          playFinalizedLostSound();
+          playSound('/finalizedlost.mp3');
           setTimeStats(prev => ({ ...prev, objectionTime: 90, status: 'LOSE_OBJECTION' }));
           setPhase('VS_STATS');
         }
@@ -283,8 +275,9 @@ export default function App() {
   }, [timeLeft, timerActive, phase]);
 
   const formatTime = (secs) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
+    const safeSecs = Math.max(0, secs);
+    const m = Math.floor(safeSecs / 60);
+    const s = safeSecs % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
@@ -327,9 +320,8 @@ export default function App() {
     const final2 = data.finansial[Math.floor(Math.random() * data.finansial.length)];
     const final3 = data.tanggungan[Math.floor(Math.random() * data.tanggungan.length)];
     const final4 = data.twist[Math.floor(Math.random() * data.twist.length)];
-    const finalLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-
-    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: finalLoc });
+    
+    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: '' });
 
     let interval = setInterval(() => {
       setTempResult({
@@ -352,7 +344,7 @@ export default function App() {
       if (spinAudioRef.current) {
         spinAudioRef.current.pause();
       }
-      playSuccessSound(); 
+      playSound('/success.mp3'); 
     }, 4000);
   };
 
@@ -434,7 +426,7 @@ export default function App() {
       setVsSpinning(false);
       setVsRolled(true);
       if (spinAudioRef.current) spinAudioRef.current.pause();
-      playSuccessSound();
+      playSound('/success.mp3');
     }, 3000);
   };
 
@@ -446,33 +438,33 @@ export default function App() {
     if (type === 'kondisi') { setFoundKondisi(true); newK = true; }
 
     if (newT && newK) {
-      playCheck2Sound();
+      playSound('/check2.mp3');
       setTimerActive(false);
       setTimeStats({ ...timeStats, discoveryTime: 420 - timeLeft });
       const randomObj = OBJECTIONS[Math.floor(Math.random() * OBJECTIONS.length)];
       setObjection(randomObj);
       setTimeout(() => setPhase('VS_OBJECTION_READ'), 1000);
     } else if (newT || newK) {
-      playCheck1Sound();
+      playSound('/check1.mp3');
     }
   };
 
   const handleRedFlag = () => {
-    playBuzzerSound();
+    playSound('/buzzer.mp3');
     document.body.classList.add('bg-red-900');
     setTimeout(() => document.body.classList.remove('bg-red-900'), 200);
     setTimeLeft(t => Math.max(0, t - 30));
   };
 
   const startObjectionTimer = () => {
-    playTimeLimitSound(); 
-    setTimeLeft(90); // 1.5 Menit (90 Detik)
+    playSound('/timelimit.mp3');
+    setTimeLeft(90); // 1.30 Menit (90 Detik)
     setTimerActive(true);
     setPhase('VS_OBJECTION_PLAY');
   };
 
   const finalizeVersusCase = () => {
-    playFinalizedWinSound();
+    playSound('/finalizedwin.mp3');
     setTimerActive(false);
     setTimeStats(prev => ({ ...prev, objectionTime: 90 - timeLeft, status: 'WIN' }));
     setPhase('VS_STATS');
@@ -520,7 +512,7 @@ export default function App() {
       <audio ref={audioGameRef} src="/bgm2.mp3" loop preload="auto" />
       <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
 
-      {/* PHASE 1: SETUP (CLEAN MAIN MENU) */}
+      {/* PHASE 1: SETUP */}
       {phase === 'SETUP' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center relative">
           <img src="/Logo.jpg" alt="The Builders" className="h-20 md:h-28 object-contain mb-8 rounded" onError={(e) => e.target.style.display = 'none'} />
@@ -540,14 +532,12 @@ export default function App() {
       {/* JALUR VERSUS MODE (1v1) */}
       {/* ================================================== */}
 
-      {/* VS 1: PUBLIC BRIEFING & GENDER SETUP */}
       {phase === 'VS_PUBLIC_BRIEFING' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full pt-16 md:pt-0">
           <div className="w-full max-w-2xl bg-[#121212] p-8 md:p-12 border border-[#2A2A2A] text-center shadow-2xl rounded-sm">
             <h2 className="text-[10px] tracking-[0.3em] text-red-500 font-bold uppercase mb-2 animate-pulse">Public Briefing</h2>
             
             {!vsRolled && !vsSpinning ? (
-              // Player Selection
               <>
                 <h1 className="text-xl md:text-2xl font-black uppercase mb-10 text-white">Player Setup</h1>
                 
@@ -555,34 +545,29 @@ export default function App() {
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 1 (Agen)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>{setVsP1Gender('Pria'); playPlayer1Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
-                      <button onClick={()=>{setVsP1Gender('Wanita'); playPlayer1Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP1Gender('Pria'); playSound('/player1.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
+                      <button onClick={()=>{setVsP1Gender('Wanita'); playSound('/player1.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
                     </div>
                   </div>
                   
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 2 (Target)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>{setVsP2Gender('Pria'); playPlayer2Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
-                      <button onClick={()=>{setVsP2Gender('Wanita'); playPlayer2Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP2Gender('Pria'); playSound('/player2.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
+                      <button onClick={()=>{setVsP2Gender('Wanita'); playSound('/player2.mp3');}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4">
-                  <button onClick={()=>setPhase('SETUP')} className="flex-1 py-5 font-bold tracking-widest text-sm uppercase transition bg-transparent text-gray-400 border border-[#3A3A3A] hover:border-white hover:text-white">
-                    Kembali
-                  </button>
-                  <button 
-                    disabled={!vsP1Gender || !vsP2Gender}
-                    onClick={triggerVersusSpin} 
-                    className={`flex-[2] py-5 font-bold tracking-widest text-sm uppercase transition ${!vsP1Gender || !vsP2Gender ? 'bg-[#2A2A2A] text-gray-500 cursor-not-allowed border border-[#3A3A3A]' : 'bg-transparent border border-white text-white hover:bg-white hover:text-black'}`}>
-                    Roll Scenario
-                  </button>
-                </div>
+                <button 
+                  disabled={!vsP1Gender || !vsP2Gender}
+                  onClick={triggerVersusSpin} 
+                  className={`w-full py-5 font-bold tracking-widest text-sm uppercase transition ${!vsP1Gender || !vsP2Gender ? 'bg-[#2A2A2A] text-gray-500 cursor-not-allowed border border-[#3A3A3A]' : 'bg-transparent border border-white text-white hover:bg-white hover:text-black'}`}>
+                  Roll Scenario
+                </button>
+                <button onClick={()=>setPhase('SETUP')} className="mt-6 text-[10px] uppercase text-gray-500 hover:text-white tracking-widest">Kembali</button>
               </>
             ) : vsSpinning ? (
-              // Spinning Roulette
               <>
                 <h1 className="text-xl md:text-2xl font-black uppercase mb-10 text-white">Randomizing...</h1>
                 <div className="bg-black border border-[#2A2A2A] p-6 mb-8 text-left space-y-4">
@@ -601,7 +586,6 @@ export default function App() {
                 </div>
               </>
             ) : (
-              // Scenario Locked
               <>
                 <h1 className="text-xl md:text-2xl font-black uppercase mb-8 text-white">Scenario Locked</h1>
                 
@@ -620,51 +604,43 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-red-950/20 border border-red-900 p-5 mb-10 animate-scale-warning">
+                <div className="bg-red-950/20 border border-red-900 p-5 mb-8 animate-scale-warning">
                   <p className="text-sm md:text-base text-red-400 font-black italic uppercase tracking-wider">⚠️ Pemain 1 (Agen) Silakan Balik Badan Sekarang!</p>
                   <p className="text-xs text-red-500/80 mt-2 leading-relaxed">Dilarang menyebut kata "Polis", "Asuransi", atau memaksa jualan sebelum menemukan titik luka target. Jika obrolan kaku/template, waktu akan dipotong!</p>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 w-full">
-                  <button onClick={() => setPhase('SETUP')} className="flex-1 bg-transparent border border-[#3A3A3A] text-gray-400 px-4 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
-                    Kembali
-                  </button>
-                  <button onClick={triggerVersusSpin} className="flex-1 bg-transparent border border-white text-white px-4 py-4 font-bold tracking-widest text-sm hover:bg-white hover:text-black transition uppercase">
-                    Spin Ulang
-                  </button>
-                  <button onClick={() => { setPhase('VS_GAMEPLAY'); setTimerActive(true); setTimeLeft(420); setFoundTanggungan(false); setFoundKondisi(false); }} className="flex-[2] bg-white text-black px-4 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
-                    Target Ready
-                  </button>
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <button onClick={() => setPhase('SETUP')} className="flex-1 bg-transparent border border-[#3A3A3A] text-gray-400 py-4 font-bold tracking-widest text-xs hover:text-white hover:border-white transition uppercase">Kembali</button>
+                  <button onClick={triggerVersusSpin} className="flex-1 bg-transparent border border-white text-white py-4 font-bold tracking-widest text-xs hover:bg-white hover:text-black transition uppercase">Spin Ulang</button>
                 </div>
+
+                <button onClick={() => { setPhase('VS_GAMEPLAY'); setTimerActive(true); setTimeLeft(420); setFoundTanggungan(false); setFoundKondisi(false); }} className="w-full bg-white text-black py-5 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
+                  Target Ready (Start Timer)
+                </button>
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* VS 2: TARGET DASHBOARD (GAMEPLAY) */}
       {phase === 'VS_GAMEPLAY' && (
         <div className="flex flex-col min-h-screen pt-20 px-4 max-w-4xl mx-auto w-full">
-          {/* Header Info */}
           <div className="flex justify-between items-end mb-4">
             <div>
               <h2 className="text-[10px] tracking-[0.3em] text-gray-500 font-bold uppercase">Target Dashboard</h2>
               <p className="text-[10px] text-gray-400 mt-1">Hanya dibaca oleh Pemain 2</p>
             </div>
-            {/* Timer Dynamic Color */}
             <div className={`text-4xl md:text-6xl font-black font-mono tracking-tighter ${timeLeft <= 210 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
               {formatTime(timeLeft)}
             </div>
           </div>
 
-          {/* Referensi Publik (Agar Pemain 2 tidak lupa) */}
           <div className="bg-[#121212] border border-[#2A2A2A] p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
             <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">📍 Lokasi</p><p className="font-bold text-sm text-white">{result.location}</p></div>
             <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">👤 Demografi</p><p className="font-bold text-sm text-white">{result.slot1}</p></div>
             <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">💰 Kapasitas</p><p className="font-bold text-sm text-white">{result.slot2}</p></div>
           </div>
 
-          {/* Secret Info Box */}
           <div className="bg-black border border-red-900/50 p-6 mb-6">
             <div className="mb-6">
               <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Rahasia 1: Tanggungan / Beban</p>
@@ -676,7 +652,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Dynamic Prompter (Muncul saat 3.5 menit terlewati / Di bawah 210 detik) */}
           {timeLeft <= 210 && (
             <div className="bg-yellow-900/40 border border-yellow-600 p-4 mb-6 animate-pulse text-center">
               <p className="text-xs font-bold text-yellow-400 uppercase tracking-widest">ACTING INSTRUCTION!</p>
@@ -684,49 +659,37 @@ export default function App() {
             </div>
           )}
 
-          {/* Weapons / Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto mb-6">
             <button onClick={handleRedFlag} className="md:col-span-2 bg-red-950 border border-red-900 text-red-400 py-6 font-black tracking-widest text-lg hover:bg-red-900 hover:text-white transition uppercase shadow-[0_0_15px_rgba(220,38,38,0.2)]">
               🚩 Kaku / Taboo Word (-30 Detik)
             </button>
             
-            <button 
-              disabled={foundTanggungan}
-              onClick={() => handleCheck('tanggungan')} 
-              className={`py-5 border transition font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 ${foundTanggungan ? 'bg-green-900/30 border-green-900 text-green-500 opacity-50' : 'bg-[#121212] border-[#3A3A3A] text-white hover:border-white'}`}
-            >
+            <button disabled={foundTanggungan} onClick={() => handleCheck('tanggungan')} className={`py-5 border transition font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 ${foundTanggungan ? 'bg-green-900/30 border-green-900 text-green-500 opacity-50' : 'bg-[#121212] border-[#3A3A3A] text-white hover:border-white'}`}>
               <div className={`w-5 h-5 border flex items-center justify-center ${foundTanggungan ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
                 {foundTanggungan && <span className="text-black text-xs">✓</span>}
               </div>
               Tanggungan Terbongkar
             </button>
             
-            <button 
-              disabled={foundKondisi}
-              onClick={() => handleCheck('kondisi')} 
-              className={`py-5 border transition font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 ${foundKondisi ? 'bg-green-900/30 border-green-900 text-green-500 opacity-50' : 'bg-[#121212] border-[#3A3A3A] text-white hover:border-white'}`}
-            >
+            <button disabled={foundKondisi} onClick={() => handleCheck('kondisi')} className={`py-5 border transition font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 ${foundKondisi ? 'bg-green-900/30 border-green-900 text-green-500 opacity-50' : 'bg-[#121212] border-[#3A3A3A] text-white hover:border-white'}`}>
               <div className={`w-5 h-5 border flex items-center justify-center ${foundKondisi ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
                 {foundKondisi && <span className="text-black text-xs">✓</span>}
               </div>
               Kondisi Terbongkar
             </button>
-
-            {/* Back Button for Dashboard */}
-            <button onClick={() => { setPhase('VS_PUBLIC_BRIEFING'); setTimerActive(false); }} className="md:col-span-2 mt-4 bg-transparent border border-[#3A3A3A] text-gray-400 py-4 font-bold tracking-widest text-xs hover:text-white hover:border-white transition uppercase">
-              Kembali (Batalkan Sesi)
-            </button>
           </div>
+          
+          <button onClick={() => { setTimerActive(false); setPhase('SETUP'); }} className="w-full bg-transparent border border-[#3A3A3A] text-gray-400 py-4 font-bold tracking-widest text-xs hover:text-white hover:border-white transition uppercase mb-12">
+            Kembali ke Menu
+          </button>
         </div>
       )}
 
-      {/* VS 3: OBJECTION READ PHASE */}
       {phase === 'VS_OBJECTION_READ' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full">
           <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-16 border-2 border-red-600 text-center shadow-[0_0_30px_rgba(220,38,38,0.3)]">
             <h1 className="text-[10px] font-bold tracking-[0.3em] text-red-500 mb-6 uppercase animate-pulse">SUDDEN DEATH: Objection Triggered</h1>
             
-            {/* Referensi Publik & Rahasia Terbongkar untuk Audience */}
             <div className="bg-black border border-[#2A2A2A] p-4 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left mx-auto">
               <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">📍 Lokasi</p><p className="font-bold text-sm text-white">{result.location}</p></div>
               <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">👤 Demografi</p><p className="font-bold text-sm text-white">{result.slot1}</p></div>
@@ -746,10 +709,8 @@ export default function App() {
         </div>
       )}
 
-      {/* VS 4: OBJECTION ACTIVE PHASE */}
       {phase === 'VS_OBJECTION_PLAY' && (
         <div className="flex flex-col items-center justify-start min-h-screen px-4 pt-12 w-full relative">
-          
           <div className="flex flex-col items-center mb-8">
              <p className="text-[10px] text-red-500 uppercase tracking-widest font-bold mb-2">Time to Handle</p>
              <div className="text-7xl md:text-8xl font-black font-mono tracking-tighter text-red-600 animate-pulse">
@@ -757,7 +718,6 @@ export default function App() {
              </div>
           </div>
 
-          {/* Referensi Publik & Rahasia Terbongkar */}
           <div className="bg-[#121212] border border-[#2A2A2A] p-4 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left w-full max-w-3xl">
             <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">📍 Lokasi</p><p className="font-bold text-sm text-white">{result.location}</p></div>
             <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">👤 Demografi</p><p className="font-bold text-sm text-white">{result.slot1}</p></div>
@@ -769,7 +729,6 @@ export default function App() {
 
           <div className="w-full max-w-3xl text-center flex-1 flex flex-col justify-center pb-12">
             <p className="text-xl md:text-3xl font-bold mb-12 text-gray-300">"{objection}"</p>
-            
             <button onClick={finalizeVersusCase} className="w-full max-w-md mx-auto bg-red-600 text-white py-6 font-black tracking-widest text-sm hover:bg-red-700 transition uppercase shadow-xl block">
               ✅ Agen Berhasil Menjawab
             </button>
@@ -777,7 +736,6 @@ export default function App() {
         </div>
       )}
 
-      {/* VS 5: STATS & LEADERBOARD */}
       {phase === 'VS_STATS' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12 pt-20 md:pt-12">
           <h1 className={`text-2xl md:text-4xl font-black tracking-widest uppercase mb-2 ${timeStats.status === 'WIN' ? 'text-white' : 'text-red-500'}`}>
@@ -922,7 +880,7 @@ export default function App() {
             </div>
             <div className="mt-12 flex flex-col md:flex-row gap-4 pb-12">
               <button onClick={() => setPhase('STRATEGY')} className="w-full md:w-auto bg-transparent border border-[#3A3A3A] text-gray-400 px-8 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">Kembali</button>
-              <button onClick={() => { playClapSound(); setPhase('FINISHED'); }} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">Finalize Case</button>
+              <button onClick={() => { playSound('/clap.mp3'); setPhase('FINISHED'); }} className="w-full md:w-auto bg-red-600 text-white px-12 py-4 font-bold tracking-widest text-sm hover:bg-red-700 transition uppercase">Finalize Case</button>
             </div>
           </div>
         </div>
