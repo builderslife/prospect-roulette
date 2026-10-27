@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 // ==========================================
-// DATABASE PROFIL & OBJECTION
+// DATABASE PROFIL, LOKASI & OBJECTION
 // ==========================================
 export const SLOT_DATA = {
   beginner: {
@@ -189,7 +189,7 @@ export default function App() {
   // Solo Mode States
   const [answers, setAnswers] = useState({ product: '', approach: '', transition: '', handling: '' });
   const [spinState, setSpinState] = useState([true, true, true, true]);
-  const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
+  const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...', location: '...' });
   const [copiedText, setCopiedText] = useState(false);
   
   // Versus Mode States
@@ -271,7 +271,7 @@ export default function App() {
           setPhase('VS_STATS');
         } else if (phase === 'VS_OBJECTION_PLAY') {
           playFinalizedLostSound();
-          setTimeStats(prev => ({ ...prev, objectionTime: 60, status: 'LOSE_OBJECTION' }));
+          setTimeStats(prev => ({ ...prev, objectionTime: 90, status: 'LOSE_OBJECTION' }));
           setPhase('VS_STATS');
         }
       }
@@ -285,45 +285,30 @@ export default function App() {
   };
 
   // ==========================================
-  // ACTION HANDLERS
+  // ACTION HANDLERS (SOLO MODE 100% UTUH)
   // ==========================================
-  const getFilteredData = (selectedMode) => {
-    let allDemografi = [...SLOT_DATA.beginner.demografi, ...SLOT_DATA.hardcore.demografi];
-    let dataPool = {
-      finansial: [...SLOT_DATA.beginner.finansial, ...SLOT_DATA.hardcore.finansial],
-      tanggungan: [...SLOT_DATA.beginner.tanggungan, ...SLOT_DATA.hardcore.tanggungan],
-      twist: [...SLOT_DATA.beginner.twist, ...SLOT_DATA.hardcore.twist]
-    };
-
-    if (selectedMode === 'versus_pria') {
-      return { ...dataPool, demografi: allDemografi.filter(d => d.startsWith('Pria')) };
-    } else if (selectedMode === 'versus_wanita') {
-      return { ...dataPool, demografi: allDemografi.filter(d => d.startsWith('Wanita')) };
-    }
-    return SLOT_DATA[selectedMode]; 
-  };
-
-  // Logika Spin KHUSUS SOLO MODE (100% Persis Seperti App_2.jsx)
   const startSpin = (selectedMode) => {
     setMode(selectedMode);
-    const data = getFilteredData(selectedMode);
+    setPhase('SPINNING');
+    setSpinState([true, true, true, true]);
+    
+    if (phase === 'SETUP' || phase === 'FINISHED') {
+      setAnswers({ product: '', approach: '', transition: '', handling: '' });
+    }
+
+    if (spinAudioRef.current) {
+      spinAudioRef.current.currentTime = 0;
+      spinAudioRef.current.play().catch(() => {});
+    }
+
+    const data = SLOT_DATA[selectedMode];
     
     const final1 = data.demografi[Math.floor(Math.random() * data.demografi.length)];
     const final2 = data.finansial[Math.floor(Math.random() * data.finansial.length)];
     const final3 = data.tanggungan[Math.floor(Math.random() * data.tanggungan.length)];
     const final4 = data.twist[Math.floor(Math.random() * data.twist.length)];
-    const finalLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-
-    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: finalLoc });
-
-    setPhase('SPINNING');
-    setSpinState([true, true, true, true]);
-    setAnswers({ product: '', approach: '', transition: '', handling: '' });
     
-    if (spinAudioRef.current) {
-      spinAudioRef.current.currentTime = 0;
-      spinAudioRef.current.play().catch(() => {});
-    }
+    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: '' });
 
     let interval = setInterval(() => {
       setTempResult({
@@ -337,21 +322,70 @@ export default function App() {
     setTimeout(() => { setSpinState([false, true, true, true]); }, 1000);
     setTimeout(() => { setSpinState([false, false, true, true]); }, 2000);
     setTimeout(() => { setSpinState([false, false, false, true]); }, 3000);
+    
     setTimeout(() => { 
       clearInterval(interval);
       setSpinState([false, false, false, false]); 
       setTempResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4 });
-      if (spinAudioRef.current) spinAudioRef.current.pause();
+      
+      if (spinAudioRef.current) {
+        spinAudioRef.current.pause();
+      }
       playSuccessSound(); 
     }, 4000);
   };
 
-  // Logika Spin KHUSUS VERSUS MODE (Briefing Screen)
+  const generateObjection = () => {
+    if (!objection) {
+      const randomObj = OBJECTIONS[Math.floor(Math.random() * OBJECTIONS.length)];
+      setObjection(randomObj);
+    }
+    setPhase('OBJECTION');
+  };
+
+  const getFormatText = () => {
+    return `📋 *STUDY CASE DRILLING*\n\n👤 *Mode:* ${mode.toUpperCase()}\n\n🎰 *PROFIL NASABAH*\n• Demografi: ${result.slot1}\n• Kapasitas: ${result.slot2}\n• Tanggungan: ${result.slot3}\n• Kondisi: ${result.slot4}\n\n💡 *STRATEGY*\n• *Product & Why:* ${answers.product}\n• *Networking:* ${answers.approach}\n• *Transition:* ${answers.transition}\n\n🎯 *OBJECTION*\nNasabah: "${objection}"\n• *Handling:* ${answers.handling}`;
+  };
+
+  const copyOnlyText = () => {
+    navigator.clipboard.writeText(getFormatText()).then(() => {
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+    });
+  };
+
+  const copyToWhatsApp = () => {
+    navigator.clipboard.writeText(getFormatText()).catch(() => {});
+    window.open(`https://wa.me/?text=${encodeURIComponent(getFormatText())}`, '_blank');
+  };
+
+  const handleReset = () => {
+    setObjection('');
+    setPhase('SETUP');
+  };
+
+  // ==========================================
+  // ACTION HANDLERS (VERSUS MODE)
+  // ==========================================
   const triggerVersusSpin = () => {
     setVsSpinning(true);
     setVsRolled(false);
     
-    const data = getFilteredData(vsP2Gender === 'Pria' ? 'versus_pria' : 'versus_wanita');
+    setFoundTanggungan(false);
+    setFoundKondisi(false);
+    setTimeStats({ discoveryTime: 0, objectionTime: 0, status: 'WIN' });
+    
+    let allDemografi = [...SLOT_DATA.beginner.demografi, ...SLOT_DATA.hardcore.demografi];
+    let dataPool = {
+      finansial: [...SLOT_DATA.beginner.finansial, ...SLOT_DATA.hardcore.finansial],
+      tanggungan: [...SLOT_DATA.beginner.tanggungan, ...SLOT_DATA.hardcore.tanggungan],
+      twist: [...SLOT_DATA.beginner.twist, ...SLOT_DATA.hardcore.twist]
+    };
+    
+    const data = {
+      ...dataPool,
+      demografi: allDemografi.filter(d => d.startsWith(vsP2Gender))
+    };
     
     if (spinAudioRef.current) {
       spinAudioRef.current.currentTime = 0;
@@ -383,7 +417,6 @@ export default function App() {
     }, 3000);
   };
 
-  // --- VERSUS MECHANICS ---
   const handleCheck = (type) => {
     let newT = foundTanggungan;
     let newK = foundKondisi;
@@ -411,8 +444,8 @@ export default function App() {
   };
 
   const startObjectionTimer = () => {
-    playTimeLimitSound();
-    setTimeLeft(60); 
+    playTimeLimitSound(); // Mainkan suara peringatan waktu
+    setTimeLeft(90); // 1.5 Menit (90 Detik)
     setTimerActive(true);
     setPhase('VS_OBJECTION_PLAY');
   };
@@ -420,7 +453,7 @@ export default function App() {
   const finalizeVersusCase = () => {
     playFinalizedWinSound();
     setTimerActive(false);
-    setTimeStats(prev => ({ ...prev, objectionTime: 60 - timeLeft, status: 'WIN' }));
+    setTimeStats(prev => ({ ...prev, objectionTime: 90 - timeLeft, status: 'WIN' }));
     setPhase('VS_STATS');
   };
 
@@ -439,15 +472,15 @@ export default function App() {
         
         @keyframes scaleWarning {
           0%, 100% { transform: scale(1); opacity: 0.9; }
-          50% { transform: scale(1.02); opacity: 1; }
+          50% { transform: scale(1.03); opacity: 1; }
         }
-        .animate-scale-warning { animation: scaleWarning 3s ease-in-out infinite; }
+        .animate-scale-warning { animation: scaleWarning 1.5s ease-in-out infinite; }
         
         @keyframes blinkPulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.8; transform: scale(0.98); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
         }
-        .animate-blink-pulse { animation: blinkPulse 2s infinite; }
+        .animate-blink-pulse { animation: blinkPulse 1.5s infinite; }
       `}</style>
 
       {/* HEADER & BGM */}
@@ -466,7 +499,7 @@ export default function App() {
       <audio ref={audioGameRef} src="/bgm2.mp3" loop preload="auto" />
       <audio ref={spinAudioRef} src="/spin.mp3" loop preload="auto" />
 
-      {/* PHASE 1: SETUP */}
+      {/* PHASE 1: SETUP (CLEAN MAIN MENU) */}
       {phase === 'SETUP' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center relative">
           <img src="/Logo.jpg" alt="The Builders" className="h-20 md:h-28 object-contain mb-8 rounded" onError={(e) => e.target.style.display = 'none'} />
@@ -652,14 +685,24 @@ export default function App() {
       {/* VS 3: OBJECTION READ PHASE */}
       {phase === 'VS_OBJECTION_READ' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full">
-          <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-16 border-2 border-red-600 text-center shadow-[0_0_30px_rgba(220,38,38,0.3)]">
+          <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-12 border-2 border-red-600 text-center shadow-[0_0_30px_rgba(220,38,38,0.3)]">
             <h1 className="text-[10px] font-bold tracking-[0.3em] text-red-500 mb-6 uppercase animate-pulse">SUDDEN DEATH: Objection Triggered</h1>
             
+            {/* Referensi Publik & Rahasia Terbongkar untuk Audience */}
+            <div className="bg-black border border-[#2A2A2A] p-4 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left mx-auto">
+              <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">📍 Lokasi</p><p className="font-bold text-sm text-white">{result.location}</p></div>
+              <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">👤 Demografi</p><p className="font-bold text-sm text-white">{result.slot1}</p></div>
+              <div className="md:col-span-2 border-t border-[#2A2A2A] pt-3">
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">⚠️ Rahasia Target Terbongkar</p>
+                <p className="font-bold text-sm text-white">{result.slot3} & <span className="text-red-400">{result.slot4}</span></p>
+              </div>
+            </div>
+
             <p className="text-gray-400 text-xs uppercase tracking-widest mb-4">Pemain 2, bacakan bantahan ini dengan jelas:</p>
-            <p className="text-3xl md:text-5xl font-bold mb-12 text-white leading-tight">"{objection}"</p>
+            <p className="text-3xl md:text-5xl font-bold mb-10 text-white leading-tight">"{objection}"</p>
             
             <button onClick={startObjectionTimer} className="w-full max-w-md mx-auto bg-white text-black py-5 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase block animate-blink-pulse">
-              Start 1 Minute Countdown
+              Start 1:30 Countdown
             </button>
           </div>
         </div>
@@ -667,16 +710,27 @@ export default function App() {
 
       {/* VS 4: OBJECTION ACTIVE PHASE */}
       {phase === 'VS_OBJECTION_PLAY' && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full relative">
-          <div className="absolute top-10 flex flex-col items-center">
+        <div className="flex flex-col items-center justify-start min-h-screen px-4 pt-12 w-full relative">
+          
+          <div className="flex flex-col items-center mb-8">
              <p className="text-[10px] text-red-500 uppercase tracking-widest font-bold mb-2">Time to Handle</p>
-             <div className="text-7xl md:text-9xl font-black font-mono tracking-tighter text-red-600 animate-pulse">
+             <div className="text-7xl md:text-8xl font-black font-mono tracking-tighter text-red-600 animate-pulse">
                {formatTime(timeLeft)}
              </div>
           </div>
 
-          <div className="w-full max-w-3xl mt-32 text-center">
-            <p className="text-xl md:text-3xl font-bold mb-16 text-gray-300">"{objection}"</p>
+          {/* Referensi Publik & Rahasia Terbongkar */}
+          <div className="bg-[#121212] border border-[#2A2A2A] p-4 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left w-full max-w-3xl">
+            <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">📍 Lokasi</p><p className="font-bold text-sm text-white">{result.location}</p></div>
+            <div><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">👤 Demografi</p><p className="font-bold text-sm text-white">{result.slot1}</p></div>
+            <div className="md:col-span-2 border-t border-[#2A2A2A] pt-3">
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">⚠️ Rahasia Target Terbongkar</p>
+              <p className="font-bold text-sm text-white">{result.slot3} & <span className="text-red-400">{result.slot4}</span></p>
+            </div>
+          </div>
+
+          <div className="w-full max-w-3xl text-center flex-1 flex flex-col justify-center pb-12">
+            <p className="text-xl md:text-3xl font-bold mb-12 text-gray-300">"{objection}"</p>
             
             <button onClick={finalizeVersusCase} className="w-full max-w-md mx-auto bg-red-600 text-white py-6 font-black tracking-widest text-sm hover:bg-red-700 transition uppercase shadow-xl block">
               ✅ Agen Berhasil Menjawab
@@ -723,13 +777,13 @@ export default function App() {
           </div>
 
           <button onClick={() => setPhase('SETUP')} className="bg-transparent border border-white text-white px-12 py-4 font-bold tracking-widest text-xs hover:bg-white hover:text-black transition uppercase">
-            Back to Menu
+            Next Challenger
           </button>
         </div>
       )}
 
       {/* ================================================== */}
-      {/* JALUR LAMA (SOLO DRILL MODE) DIBIARKAN UTUH */}
+      {/* JALUR LAMA (SOLO DRILL MODE 100% ORIGINAL) */}
       {/* ================================================== */}
       
       {phase === 'SPINNING' && (
