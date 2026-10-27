@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 // ==========================================
-// DATABASE PROFIL, LOKASI & OBJECTION
+// DATABASE PROFIL & OBJECTION
 // ==========================================
 export const SLOT_DATA = {
   beginner: {
@@ -189,7 +189,7 @@ export default function App() {
   // Solo Mode States
   const [answers, setAnswers] = useState({ product: '', approach: '', transition: '', handling: '' });
   const [spinState, setSpinState] = useState([true, true, true, true]);
-  const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...', location: '...' });
+  const [tempResult, setTempResult] = useState({ slot1: '...', slot2: '...', slot3: '...', slot4: '...' });
   const [copiedText, setCopiedText] = useState(false);
   
   // Versus Mode States
@@ -198,7 +198,7 @@ export default function App() {
   const [vsSpinning, setVsSpinning] = useState(false);
   const [vsRolled, setVsRolled] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(420); // 7 menit = 420 detik
+  const [timeLeft, setTimeLeft] = useState(420); // 7 menit
   const [foundTanggungan, setFoundTanggungan] = useState(false);
   const [foundKondisi, setFoundKondisi] = useState(false);
   const [timeStats, setTimeStats] = useState({ discoveryTime: 0, objectionTime: 0, status: 'WIN' });
@@ -220,7 +220,7 @@ export default function App() {
   const playFinalizedLostSound = () => new Audio('/finalizedlost.mp3').play().catch(() => {});
   const playFailSound = () => new Audio('/fail.mp3').play().catch(() => {});
 
-  // BGM Logic (Setup BGM main terus di Home & Briefing, ganti ke BGM2 pas Gameplay)
+  // BGM Logic (Menyala tanpa henti dari SETUP ke VS_PUBLIC_BRIEFING)
   const isSetupPhase = phase === 'SETUP' || phase === 'VS_PUBLIC_BRIEFING';
   
   useEffect(() => {
@@ -262,7 +262,6 @@ export default function App() {
       if (timeLeft === 210 && phase === 'VS_GAMEPLAY') {
         playTimeLimitSound();
       }
-
       // Kalah karena waktu habis
       if (timeLeft === 0) {
         setTimerActive(false);
@@ -279,7 +278,6 @@ export default function App() {
     }
   }, [timeLeft, timerActive, phase]);
 
-  // Utility Time Formatter
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -302,14 +300,22 @@ export default function App() {
     } else if (selectedMode === 'versus_wanita') {
       return { ...dataPool, demografi: allDemografi.filter(d => d.startsWith('Wanita')) };
     }
-    return SLOT_DATA[selectedMode]; // Beginner or Hardcore
+    return SLOT_DATA[selectedMode]; 
   };
 
+  // Logika Spin KHUSUS SOLO MODE (100% Persis Seperti App_2.jsx)
   const startSpin = (selectedMode) => {
     setMode(selectedMode);
     const data = getFilteredData(selectedMode);
     
-    // SOLO MODE SPIN
+    const final1 = data.demografi[Math.floor(Math.random() * data.demografi.length)];
+    const final2 = data.finansial[Math.floor(Math.random() * data.finansial.length)];
+    const final3 = data.tanggungan[Math.floor(Math.random() * data.tanggungan.length)];
+    const final4 = data.twist[Math.floor(Math.random() * data.twist.length)];
+    const finalLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+
+    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: finalLoc });
+
     setPhase('SPINNING');
     setSpinState([true, true, true, true]);
     setAnswers({ product: '', approach: '', transition: '', handling: '' });
@@ -319,11 +325,6 @@ export default function App() {
       spinAudioRef.current.play().catch(() => {});
     }
 
-    const final1 = data.demografi[Math.floor(Math.random() * data.demografi.length)];
-    const final2 = data.finansial[Math.floor(Math.random() * data.finansial.length)];
-    const final3 = data.tanggungan[Math.floor(Math.random() * data.tanggungan.length)];
-    const final4 = data.twist[Math.floor(Math.random() * data.twist.length)];
-
     let interval = setInterval(() => {
       setTempResult({
         slot1: data.demografi[Math.floor(Math.random() * data.demografi.length)],
@@ -332,18 +333,20 @@ export default function App() {
         slot4: data.twist[Math.floor(Math.random() * data.twist.length)],
       });
     }, 100);
+
     setTimeout(() => { setSpinState([false, true, true, true]); }, 1000);
     setTimeout(() => { setSpinState([false, false, true, true]); }, 2000);
     setTimeout(() => { setSpinState([false, false, false, true]); }, 3000);
     setTimeout(() => { 
       clearInterval(interval);
       setSpinState([false, false, false, false]); 
-      setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: '' });
+      setTempResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4 });
       if (spinAudioRef.current) spinAudioRef.current.pause();
       playSuccessSound(); 
     }, 4000);
   };
 
+  // Logika Spin KHUSUS VERSUS MODE (Briefing Screen)
   const triggerVersusSpin = () => {
     setVsSpinning(true);
     setVsRolled(false);
@@ -409,7 +412,7 @@ export default function App() {
 
   const startObjectionTimer = () => {
     playTimeLimitSound();
-    setTimeLeft(60); // 1 Menit
+    setTimeLeft(60); 
     setTimerActive(true);
     setPhase('VS_OBJECTION_PLAY');
   };
