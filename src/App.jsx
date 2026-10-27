@@ -219,6 +219,10 @@ export default function App() {
   const playFinalizedWinSound = () => new Audio('/finalizedwin.mp3').play().catch(() => {});
   const playFinalizedLostSound = () => new Audio('/finalizedlost.mp3').play().catch(() => {});
   const playFailSound = () => new Audio('/fail.mp3').play().catch(() => {});
+  
+  // Character Selection Sounds
+  const playPlayer1Sound = () => new Audio('/player1.mp3').play().catch(() => {});
+  const playPlayer2Sound = () => new Audio('/player2.mp3').play().catch(() => {});
 
   // BGM Logic (Menyala tanpa henti dari SETUP ke VS_PUBLIC_BRIEFING)
   const isSetupPhase = phase === 'SETUP' || phase === 'VS_PUBLIC_BRIEFING';
@@ -287,6 +291,22 @@ export default function App() {
   // ==========================================
   // ACTION HANDLERS (SOLO MODE 100% UTUH)
   // ==========================================
+  const getFilteredData = (selectedMode) => {
+    let allDemografi = [...SLOT_DATA.beginner.demografi, ...SLOT_DATA.hardcore.demografi];
+    let dataPool = {
+      finansial: [...SLOT_DATA.beginner.finansial, ...SLOT_DATA.hardcore.finansial],
+      tanggungan: [...SLOT_DATA.beginner.tanggungan, ...SLOT_DATA.hardcore.tanggungan],
+      twist: [...SLOT_DATA.beginner.twist, ...SLOT_DATA.hardcore.twist]
+    };
+
+    if (selectedMode === 'versus_pria') {
+      return { ...dataPool, demografi: allDemografi.filter(d => d.startsWith('Pria')) };
+    } else if (selectedMode === 'versus_wanita') {
+      return { ...dataPool, demografi: allDemografi.filter(d => d.startsWith('Wanita')) };
+    }
+    return SLOT_DATA[selectedMode]; 
+  };
+
   const startSpin = (selectedMode) => {
     setMode(selectedMode);
     setPhase('SPINNING');
@@ -307,8 +327,9 @@ export default function App() {
     const final2 = data.finansial[Math.floor(Math.random() * data.finansial.length)];
     const final3 = data.tanggungan[Math.floor(Math.random() * data.tanggungan.length)];
     const final4 = data.twist[Math.floor(Math.random() * data.twist.length)];
-    
-    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: '' });
+    const finalLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+
+    setResult({ slot1: final1, slot2: final2, slot3: final3, slot4: final4, location: finalLoc });
 
     let interval = setInterval(() => {
       setTempResult({
@@ -444,7 +465,7 @@ export default function App() {
   };
 
   const startObjectionTimer = () => {
-    playTimeLimitSound(); // Mainkan suara peringatan waktu
+    playTimeLimitSound(); 
     setTimeLeft(90); // 1.5 Menit (90 Detik)
     setTimerActive(true);
     setPhase('VS_OBJECTION_PLAY');
@@ -534,27 +555,31 @@ export default function App() {
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 1 (Agen)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>setVsP1Gender('Pria')} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
-                      <button onClick={()=>setVsP1Gender('Wanita')} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP1Gender('Pria'); playPlayer1Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Pria' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Pria</button>
+                      <button onClick={()=>{setVsP1Gender('Wanita'); playPlayer1Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP1Gender === 'Wanita' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-white'}`}>Wanita</button>
                     </div>
                   </div>
                   
                   <div className="bg-black border border-[#2A2A2A] p-6">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-bold">Pemain 2 (Target)</p>
                     <div className="flex gap-2 justify-center">
-                      <button onClick={()=>setVsP2Gender('Pria')} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
-                      <button onClick={()=>setVsP2Gender('Wanita')} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
+                      <button onClick={()=>{setVsP2Gender('Pria'); playPlayer2Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Pria' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Pria</button>
+                      <button onClick={()=>{setVsP2Gender('Wanita'); playPlayer2Sound();}} className={`flex-1 py-3 font-bold text-xs tracking-widest uppercase transition border ${vsP2Gender === 'Wanita' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-[#3A3A3A] hover:border-red-500'}`}>Wanita</button>
                     </div>
                   </div>
                 </div>
 
-                <button 
-                  disabled={!vsP1Gender || !vsP2Gender}
-                  onClick={triggerVersusSpin} 
-                  className={`w-full py-5 font-bold tracking-widest text-sm uppercase transition ${!vsP1Gender || !vsP2Gender ? 'bg-[#2A2A2A] text-gray-500 cursor-not-allowed border border-[#3A3A3A]' : 'bg-transparent border border-white text-white hover:bg-white hover:text-black'}`}>
-                  Roll Scenario
-                </button>
-                <button onClick={()=>setPhase('SETUP')} className="mt-6 text-[10px] uppercase text-gray-500 hover:text-white tracking-widest">Batal</button>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <button onClick={()=>setPhase('SETUP')} className="flex-1 py-5 font-bold tracking-widest text-sm uppercase transition bg-transparent text-gray-400 border border-[#3A3A3A] hover:border-white hover:text-white">
+                    Kembali
+                  </button>
+                  <button 
+                    disabled={!vsP1Gender || !vsP2Gender}
+                    onClick={triggerVersusSpin} 
+                    className={`flex-[2] py-5 font-bold tracking-widest text-sm uppercase transition ${!vsP1Gender || !vsP2Gender ? 'bg-[#2A2A2A] text-gray-500 cursor-not-allowed border border-[#3A3A3A]' : 'bg-transparent border border-white text-white hover:bg-white hover:text-black'}`}>
+                    Roll Scenario
+                  </button>
+                </div>
               </>
             ) : vsSpinning ? (
               // Spinning Roulette
@@ -600,9 +625,17 @@ export default function App() {
                   <p className="text-xs text-red-500/80 mt-2 leading-relaxed">Dilarang menyebut kata "Polis", "Asuransi", atau memaksa jualan sebelum menemukan titik luka target. Jika obrolan kaku/template, waktu akan dipotong!</p>
                 </div>
 
-                <button onClick={() => { setPhase('VS_GAMEPLAY'); setTimerActive(true); setTimeLeft(420); setFoundTanggungan(false); setFoundKondisi(false); }} className="w-full bg-white text-black py-5 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
-                  Target Ready (Start Timer)
-                </button>
+                <div className="flex flex-col md:flex-row gap-4 w-full">
+                  <button onClick={() => setPhase('SETUP')} className="flex-1 bg-transparent border border-[#3A3A3A] text-gray-400 px-4 py-4 font-bold tracking-widest text-sm hover:text-white hover:border-white transition uppercase">
+                    Kembali
+                  </button>
+                  <button onClick={triggerVersusSpin} className="flex-1 bg-transparent border border-white text-white px-4 py-4 font-bold tracking-widest text-sm hover:bg-white hover:text-black transition uppercase">
+                    Spin Ulang
+                  </button>
+                  <button onClick={() => { setPhase('VS_GAMEPLAY'); setTimerActive(true); setTimeLeft(420); setFoundTanggungan(false); setFoundKondisi(false); }} className="flex-[2] bg-white text-black px-4 py-4 font-bold tracking-widest text-sm hover:bg-gray-200 transition uppercase animate-blink-pulse">
+                    Target Ready
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -678,6 +711,11 @@ export default function App() {
               </div>
               Kondisi Terbongkar
             </button>
+
+            {/* Back Button for Dashboard */}
+            <button onClick={() => { setPhase('VS_PUBLIC_BRIEFING'); setTimerActive(false); }} className="md:col-span-2 mt-4 bg-transparent border border-[#3A3A3A] text-gray-400 py-4 font-bold tracking-widest text-xs hover:text-white hover:border-white transition uppercase">
+              Kembali (Batalkan Sesi)
+            </button>
           </div>
         </div>
       )}
@@ -685,7 +723,7 @@ export default function App() {
       {/* VS 3: OBJECTION READ PHASE */}
       {phase === 'VS_OBJECTION_READ' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-4 w-full">
-          <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-12 border-2 border-red-600 text-center shadow-[0_0_30px_rgba(220,38,38,0.3)]">
+          <div className="w-full max-w-3xl bg-[#121212] p-8 md:p-16 border-2 border-red-600 text-center shadow-[0_0_30px_rgba(220,38,38,0.3)]">
             <h1 className="text-[10px] font-bold tracking-[0.3em] text-red-500 mb-6 uppercase animate-pulse">SUDDEN DEATH: Objection Triggered</h1>
             
             {/* Referensi Publik & Rahasia Terbongkar untuk Audience */}
